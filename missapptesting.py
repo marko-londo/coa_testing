@@ -63,7 +63,7 @@ CHANGELOG = """
 st.title("Missed Stops Manager")
 st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
 
-cl_col, doc_col = st.columns(2)
+cl_col, doc_col = st.columns([3,1])
 
 with cl_col:
     with st.expander("What's New?", expanded=False):
@@ -75,7 +75,7 @@ with doc_col:
         
     DOC_LINK = "https://docs.google.com/document/d/1UkKj56Qn-25gMWheC-G2rC6YRJzeGsfxk9k2XNLpeTw"
     
-    st.link_button("📄 View Full Changelog & Documentation", DOC_LINK)
+    st.link_button("📄 View Full Docs", DOC_LINK)
 
 COLUMNS = [
     "Date", "Submitted By", "Time Called In", "Zone", "Time Sent to JPM",
