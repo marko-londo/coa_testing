@@ -68,7 +68,7 @@ with st.expander("What's New?", expanded=False):
 # ---- Documentation Link ----
 DOC_LINK = "https://docs.google.com/document/d/1UkKj56Qn-25gMWheC-G2rC6YRJzeGsfxk9k2XNLpeTw"
 
-st.link_button("📄 View Full Changelog & Documentation", DOC_LINK)
+st.link_button("📄 test", DOC_LINK)
 
 COLUMNS = [
     "Date", "Submitted By", "Time Called In", "Zone", "Time Sent to JPM",
