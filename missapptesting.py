@@ -53,8 +53,6 @@ authenticator.logout("Logout", "sidebar")
 
 # ----------- 2. GOOGLE SHEETS SETUP -----------
 SERVICE_ACCOUNT_INFO = st.secrets["google_service_account"]
-IMAGE_FOLDER_ID = "1-8djoNRnwYHijfIPcv7GujvFrPZvLgpt"
-TEMPLATE_ID = '1uBGHqyFhyA79l9_R37wWdKAPrtnuikWIXvTye7Bt_dc'
 FOLDER_ID = '1ogx3zPeIdTKp7C5EJ5jKavFv21mDmySj'
 ADDRESS_LIST_SHEET_URL = "https://docs.google.com/spreadsheets/d/1JJeufDkoQ6p_LMe5F-Nrf_t0r_dHrAHu8P8WXi96V9A/edit#gid=0"
 
@@ -196,9 +194,59 @@ today_tab = get_today_tab_name(today)
 
 # ----------- PAGE 1: SUBMISSION -----------
 if main_mode == "Submit a Missed Stop (City Side)":
+    # ----- Build a {zone: collection_day} mapping -----
     service_type = st.selectbox("Service Type", ["MSW", "SS", "YW"])
-    zone = st.selectbox("Zone", sorted({row[f"{service_type} Zone"] for row in address_df}))
-    address = st.selectbox("Address", sorted({row["Address"] for row in address_df if row[f"{service_type} Zone"] == zone}))
+    zone_field = f"{service_type} Zone"
+    day_field = f"{service_type} Zone"
+    # Build {zone: day} from your address_df
+    zone_to_day = {}
+    for row in address_df:
+        zone = row.get(zone_field)
+        day = row.get(day_field) or row.get("Day", "")
+        if zone:  # Avoid blanks/None
+            # Find first day encountered for zone
+            if zone not in zone_to_day:
+                zone_to_day[zone] = row.get(f"{service_type} Zone") or row.get(f"{service_type} Day", "")
+
+    # Use your standard order (edit as needed)
+    week_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+    # For each zone, find the weekday index for sorting
+    def get_weekday_idx(zone):
+        for i, day in enumerate(week_order):
+            if day.lower() in str(zone_to_day[zone]).lower():
+                return i
+        return 99  # Put unknown days at the end
+
+    # Unique, ordered list of zones, sorted by collection weekday
+    zones = sorted({row[zone_field] for row in address_df if row[zone_field]}, key=get_weekday_idx)
+
+    # --- Set yesterday's day index (Monday=0, ..., Saturday=5) ---
+    today_idx = datetime.date.today().weekday()  # Monday=0, ..., Sunday=6
+    yesterday_idx = (today_idx - 1) % 7  # Wraps to Sunday=6 if today=Monday
+    # Map to week_order index; your context is Mon-Sat, so adjust as needed
+    if yesterday_idx >= len(week_order):
+        yesterday_idx = len(week_order)-1  # fallback to Saturday
+
+    yesterday_day = week_order[yesterday_idx]
+
+    # Find the first zone whose assigned day matches yesterday's day
+    default_zone = None
+    for z in zones:
+        if yesterday_day.lower() in str(zone_to_day[z]).lower():
+            default_zone = z
+            break
+    if not default_zone:
+        default_zone = zones[0] if zones else ""
+
+    # Now build dropdown with correct order and default
+    zone = st.selectbox("Zone", zones, index=zones.index(default_zone) if default_zone in zones else 0)
+
+    # The rest remains the same!
+    address = st.selectbox(
+        "Address",
+        sorted({row["Address"] for row in address_df if row[zone_field] == zone})
+    )
     route = next((row[f"{service_type} Route"] for row in address_df if row["Address"] == address), "")
     whole_block = st.selectbox("Whole Block", ["NO", "YES"])
     placement_exception = st.selectbox("Placement Exception?", ["NO", "YES"])
@@ -207,13 +255,11 @@ if main_mode == "Submit a Missed Stop (City Side)":
     now = datetime.datetime.now(pytz.timezone("America/New_York"))
     current_time_str = now.strftime("%I:%M")
     default_ampm = "AM" if now.hour < 12 else "PM"
-    
-    col1, col2 = st.columns([2, 1])
+
     with col1:
         called_in_time = st.text_input("Time Called In (HH:MM)", placeholder=current_time_str)
     with col2:
         ampm = st.selectbox("AM/PM", ["AM", "PM"], index=0 if default_ampm == "AM" else 1)
-
 
     city_notes = st.text_area("City Notes (optional)")
     submit_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
@@ -224,6 +270,9 @@ if main_mode == "Submit a Missed Stop (City Side)":
         "Whole Block": whole_block, "Placement Exception": placement_exception, "PE Address": pe_address,
         "City Notes": city_notes, "Collection Status": "Pending"
     }
+    
+    # (Continue with your existing validation and submit logic as before)
+
     
     missing_fields = []
     
