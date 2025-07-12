@@ -110,14 +110,48 @@ def get_next_saturday(today):
     days_until_sat = (5 - today.weekday()) % 7
     return today + datetime.timedelta(days=days_until_sat)
 
-def upload_to_dropbox(file, filename):
+def upload_to_dropbox(file, row_index, service_type):
+    import dropbox
+    app_key = st.secrets["dropbox"]["app_key"]
+    app_secret = st.secrets["dropbox"]["app_secret"]
+    refresh_token = st.secrets["dropbox"]["refresh_token"]
+    dbx = dropbox.Dropbox(
+        oauth2_refresh_token=refresh_token,
+        app_key=app_key,
+        app_secret=app_secret
+    )
+    today = datetime.date.today().strftime("%-m.%-d.%Y")  # For 7.12.2025
+    filename = f"{row_index}-{service_type}-{today}"
 
-    # Upload file
-    dbx.files_upload(file.read(), f"/missed_stops/{filename}", mode=dropbox.files.WriteMode.overwrite)
+    # Use original file extension if possible
+    ext = ""
+    if hasattr(file, "name") and "." in file.name:
+        ext = file.name[file.name.rfind("."):]
+    elif hasattr(file, "type"):
+        mime_map = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/heic": ".heic"}
+        ext = mime_map.get(getattr(file, "type", ""), "")
 
-    # Create shared link
-    link_metadata = dbx.sharing_create_shared_link_with_settings(f"/missed_stops/{filename}")
-    return link_metadata.url.replace("?dl=0", "?raw=1")  # Direct image link
+    filename += ext
+
+    dropbox_path = f"/missed_stops/{filename}"
+    file.seek(0)
+    dbx.files_upload(file.read(), dropbox_path, mode=dropbox.files.WriteMode.overwrite)
+
+    try:
+        link_metadata = dbx.sharing_create_shared_link_with_settings(dropbox_path)
+        url = link_metadata.url
+    except dropbox.exceptions.ApiError as e:
+        if (isinstance(e.error, dropbox.sharing.CreateSharedLinkWithSettingsError) and
+            e.error.is_shared_link_already_exists()):
+            links = dbx.sharing_list_shared_links(path=dropbox_path, direct_only=True).links
+            if links:
+                url = links[0].url
+            else:
+                raise RuntimeError("Could not get existing Dropbox shared link.")
+        else:
+            raise
+    return url.replace("?dl=0", "?raw=1")
+
 
 def get_sheet_title(today):
     next_saturday = get_next_saturday(today)
@@ -475,13 +509,16 @@ else:
                 if uploaded_image:
                     try:
                         uploaded_image.seek(0)
-                        dropbox_url = upload_to_dropbox(uploaded_image, uploaded_image.name)
+                        row_index = chosen["row_idx"]  # Chosen is your current row dict, as in your code
+                        service_type = sel.get("Service Type", "Unknown")  # sel is the row being completed
+                        dropbox_url = upload_to_dropbox(uploaded_image, row_index, service_type)
                         image_link = f'=HYPERLINK("{dropbox_url}", "Image Link")'
                     except Exception as e:
                         st.error(f"Dropbox upload failed: {e}")
                         image_link = "UPLOAD FAILED"
                 else:
                     image_link = "N/A"
+
             
                 updates = {
                     "Driver Check-in Time": check_in_time,
