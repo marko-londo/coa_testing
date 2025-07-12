@@ -68,7 +68,7 @@ COLUMNS = [
     "JPM Notes", "Image", "Times Missed", "Last Missed"
 ]
 
-DAY_TABS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+DAY_TABS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
 def upload_image_to_drive(file, folder_id, credentials):
     import io
@@ -210,7 +210,7 @@ if main_mode == "Submit a Missed Stop (City Side)":
                 zone_to_day[zone] = row.get(f"{service_type} Zone") or row.get(f"{service_type} Day", "")
 
     # Use your standard order (edit as needed)
-    week_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    week_order = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
     # For each zone, find the weekday index for sorting
     def get_weekday_idx(zone):
