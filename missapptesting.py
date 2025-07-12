@@ -210,26 +210,24 @@ if main_mode == "Submit a Missed Stop (City Side)":
                 zone_to_day[zone] = row.get(f"{service_type} Zone") or row.get(f"{service_type} Day", "")
 
     # Use your standard order (edit as needed)
-    week_order = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+week_order = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
-    # For each zone, find the weekday index for sorting
-    def get_weekday_idx(zone):
-        for i, day in enumerate(week_order):
-            if day.lower() in str(zone_to_day[zone]).lower():
-                return i
-        return 99  # Put unknown days at the end
+def get_weekday_idx(zone):
+    for i, day in enumerate(week_order):
+        if day.lower() in str(zone_to_day[zone]).lower():
+            return i
+    return 99
 
-    # Unique, ordered list of zones, sorted by collection weekday
-    zones = sorted({row[zone_field] for row in address_df if row[zone_field]}, key=get_weekday_idx)
+zones = sorted({row[zone_field] for row in address_df if row[zone_field]}, key=get_weekday_idx)
 
-    # --- Set yesterday's day index (Monday=0, ..., Saturday=5) ---
-    today_idx = datetime.date.today().weekday()  # Monday=0, ..., Sunday=6
-    yesterday_idx = (today_idx - 1) % 7  # Wraps to Sunday=6 if today=Monday
-    # Map to week_order index; your context is Mon-Sat, so adjust as needed
-    if yesterday_idx >= len(week_order):
-        yesterday_idx = len(week_order)-1  # fallback to Saturday
+def weekday_to_week_order_idx(py_weekday):
+    return (py_weekday + 1) % 7
 
-    yesterday_day = week_order[yesterday_idx]
+today_py_idx = datetime.date.today().weekday()  # 0=Monday, ..., 6=Sunday
+today_idx = weekday_to_week_order_idx(today_py_idx)  # 0=Sunday, ..., 6=Saturday
+
+yesterday_idx = (today_idx - 1) % 7
+yesterday_day = week_order[yesterday_idx]
 
     # Find the first zone whose assigned day matches yesterday's day
     default_zone = None
