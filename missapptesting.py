@@ -68,7 +68,7 @@ COLUMNS = [
     "JPM Notes", "Image", "Times Missed", "Last Missed"
 ]
 
-DAY_TABS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+DAY_TABS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
 def upload_image_to_drive(file, folder_id, credentials):
     import io
