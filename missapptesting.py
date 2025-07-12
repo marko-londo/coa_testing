@@ -65,8 +65,8 @@ CHANGELOG = """
     - Version number and changelog now visible on login
     - Fixed Dropbox temp token issue
 """
-
-st.markdown(f"<h2 style='margin-bottom:0;'>Missed Stops Manager</h2><div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
+st.title("Missed Stops Manager")
+st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
 with st.expander("What's New?", expanded=False):
     st.markdown(CHANGELOG)
 
@@ -222,7 +222,6 @@ def load_address_df(service_account_info, address_sheet_url):
 address_df = load_address_df(SERVICE_ACCOUNT_INFO, ADDRESS_LIST_SHEET_URL)
 
 # ----------- MAIN PAGE SELECTOR -----------
-st.title("Missed Stops Manager")
 main_mode = st.sidebar.radio(
     "Choose your mode:",
     ["Submit a Missed Stop (City Side)", "JPM Operations (Dispatch/Complete)"]
