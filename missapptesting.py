@@ -68,21 +68,7 @@ with st.expander("What's New?", expanded=False):
 # ---- Documentation Link ----
 DOC_LINK = "https://docs.google.com/document/d/1UkKj56Qn-25gMWheC-G2rC6YRJzeGsfxk9k2XNLpeTw"
 
-st.markdown(
-    f"""<div style='margin-top:10px; margin-bottom:20px;'>
-        <a href="{DOC_LINK}" target="_blank" style="
-            background:#f1f3f6;
-            color:#1558a4;
-            padding:0.6em 1.2em;
-            border-radius:0.5em;
-            font-weight:600;
-            text-decoration:none;
-            display:inline-block;">
-        📄 View Full Changelog & Documentation
-        </a>
-    </div>""",
-    unsafe_allow_html=True
-)
+st.link_button("📄 View Full Changelog & Documentation", DOC_LINK)
 
 COLUMNS = [
     "Date", "Submitted By", "Time Called In", "Zone", "Time Sent to JPM",
