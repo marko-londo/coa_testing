@@ -229,19 +229,20 @@ today_idx = weekday_to_week_order_idx(today_py_idx)  # 0=Sunday, ..., 6=Saturday
 yesterday_idx = (today_idx - 1) % 7
 yesterday_day = week_order[yesterday_idx]
 
-    # Find the first zone whose assigned day matches yesterday's day
-    default_zone = None
-    for z in zones:
-        if yesterday_day.lower() in str(zone_to_day[z]).lower():
-            default_zone = z
-            break
-    if not default_zone:
-        default_zone = zones[0] if zones else ""
+# Find the first zone whose assigned day matches yesterday's day
+default_zone = None
+for z in zones:
+    if yesterday_day.lower() in str(zone_to_day[z]).lower():
+        default_zone = z
+        break
+if not default_zone:
+    default_zone = zones[0] if zones else ""
 
-    # Now build dropdown with correct order and default
-    zone = st.selectbox("Zone", zones, index=zones.index(default_zone) if default_zone in zones else 0)
+# Now build dropdown with correct order and default
+zone = st.selectbox("Zone", zones, index=zones.index(default_zone) if default_zone in zones else 0)
 
-    # The rest remains the same!
+# The rest remains the same!
+
     address = st.selectbox(
         "Address",
         sorted({row["Address"] for row in address_df if row[zone_field] == zone})
