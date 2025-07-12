@@ -19,7 +19,17 @@ authenticator = stauth.Authenticate(
     credentials, 'missed_stops_app', 'some_secret_key', cookie_expiry_days=3
 )
 
-DROPBOX_ACCESS_TOKEN = st.secrets["dropbox"]["access_token"]
+
+app_key = st.secrets["dropbox"]["app_key"]
+app_secret = st.secrets["dropbox"]["app_secret"]
+refresh_token = st.secrets["dropbox"]["refresh_token"]
+
+dbx = dropbox.Dropbox(
+    oauth2_refresh_token=refresh_token,
+    app_key=app_key,
+    app_secret=app_secret
+)
+
 
 # ----------- VERSION & CHANGELOG -----------
 APP_VERSION = "v1.1.1"
@@ -101,7 +111,6 @@ def get_next_saturday(today):
     return today + datetime.timedelta(days=days_until_sat)
 
 def upload_to_dropbox(file, filename):
-    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
 
     # Upload file
     dbx.files_upload(file.read(), f"/missed_stops/{filename}", mode=dropbox.files.WriteMode.overwrite)
