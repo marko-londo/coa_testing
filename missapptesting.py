@@ -39,6 +39,18 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapi
 credentials_gs = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
 gs_client = gspread.authorize(credentials_gs)
 
+name, authentication_status, username = authenticator.login('main')
+
+if authentication_status is False:
+    st.error("Incorrect username or password. Please try again.")
+    st.stop()
+elif authentication_status is None:
+    st.warning("Please enter your username and password.")
+    st.stop()
+
+st.success(f"Welcome, {name}!")
+authenticator.logout("Logout", "sidebar")
+
 # ----------- VERSION & CHANGELOG -----------
 APP_VERSION = "v1.1.1"
 CHANGELOG = """
@@ -57,18 +69,6 @@ CHANGELOG = """
 st.markdown(f"<h2 style='margin-bottom:0;'>Missed Stops Manager</h2><div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
 with st.expander("What's New?", expanded=False):
     st.markdown(CHANGELOG)
-
-name, authentication_status, username = authenticator.login('main')
-
-if authentication_status is False:
-    st.error("Incorrect username or password. Please try again.")
-    st.stop()
-elif authentication_status is None:
-    st.warning("Please enter your username and password.")
-    st.stop()
-
-st.success(f"Welcome, {name}!")
-authenticator.logout("Logout", "sidebar")
 
 COLUMNS = [
     "Date", "Submitted By", "Time Called In", "Zone", "Time Sent to JPM",
