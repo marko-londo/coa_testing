@@ -42,7 +42,8 @@ CHANGELOG = """
     - Zones ordered by day of week rather than alphabetical
     - Shifted Zone names to night before instead of day of (Monday becomes Sunday, etc.)
     - Added direct link to weekly log after missed stop submission  
-    - Version number and changelog now visible on login  
+    - Version number and changelog now visible on login
+    - Fixed Dropbox temp token issue
 """
 
 st.markdown(f"<h2 style='margin-bottom:0;'>Missed Stops Manager</h2><div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
