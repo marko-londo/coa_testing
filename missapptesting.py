@@ -52,23 +52,37 @@ st.success(f"Welcome, {name}!")
 authenticator.logout("Logout", "sidebar")
 
 # ----------- VERSION & CHANGELOG -----------
-APP_VERSION = "v1.1.1"
+APP_VERSION = "v1.2"
 CHANGELOG = """
-- **v1.1.1** (2025-07-11):  
-    - No longer need a "0" before time input
-    - Added "Incorrect Password" warning
-    - Made it impossible to submit duplicate Addresses on the same day
-    - Zone dropdown defaults to most recent collection Zone
-    - Zones ordered by day of week rather than alphabetical
-    - Shifted Zone names to night before instead of day of (Monday becomes Sunday, etc.)
-    - Added direct link to weekly log after missed stop submission  
-    - Version number and changelog now visible on login
-    - Fixed Dropbox temp token issue
+- **v1.2** (2025-07-12):  
+    - Fixed Dropbox temporary token issue.
+    - Fixed Image upload issue.
+    - Uploaded images are now automatically renamed based on relevant data (row, date, service type, etc.) for easier identification and organization.
 """
+
 st.title("Missed Stops Manager")
 st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
 with st.expander("What's New?", expanded=False):
     st.markdown(CHANGELOG)
+
+# ---- Documentation Link ----
+DOC_LINK = "https://docs.google.com/document/d/1UkKj56Qn-25gMWheC-G2rC6YRJzeGsfxk9k2XNLpeTw"
+
+st.markdown(
+    f"""<div style='margin-top:10px; margin-bottom:20px;'>
+        <a href="{DOC_LINK}" target="_blank" style="
+            background:#f1f3f6;
+            color:#1558a4;
+            padding:0.6em 1.2em;
+            border-radius:0.5em;
+            font-weight:600;
+            text-decoration:none;
+            display:inline-block;">
+        📄 View Full Changelog & Documentation
+        </a>
+    </div>""",
+    unsafe_allow_html=True
+)
 
 COLUMNS = [
     "Date", "Submitted By", "Time Called In", "Zone", "Time Sent to JPM",
