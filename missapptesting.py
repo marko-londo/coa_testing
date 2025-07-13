@@ -350,131 +350,136 @@ def help_page(name, user_role):
 
 
 def city_ops():
-    today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
+    st.sidebar.subheader("City of Allentown")
+    city_mode = st.sidebar.radio("Select Action:", ["Submit a Missed Pickup", "Help"])
 
-    drive = build('drive', 'v3', credentials=credentials_gs)
-    sheet_title = get_sheet_title(today)
-    weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
-    weekly_ss = gs_client.open_by_key(weekly_id)
-    today_tab = get_today_tab_name(today)
+    if city_mode == "Submit a missed Pickup":
+        today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
     
-    service_type = st.selectbox("Service Type", ["MSW", "SS", "YW"])
-    zone_field = f"{service_type} Zone"
-    day_field = f"{service_type} Zone"
-    zone_to_day = {}
-    for row in address_df:
-        zone = row.get(zone_field)
-        day = row.get(day_field) or row.get("Day", "")
-        if zone:  
-            if zone not in zone_to_day:
-                zone_to_day[zone] = row.get(f"{service_type} Zone") or row.get(f"{service_type} Day", "")
-
-
-    week_order = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        drive = build('drive', 'v3', credentials=credentials_gs)
+        sheet_title = get_sheet_title(today)
+        weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
+        weekly_ss = gs_client.open_by_key(weekly_id)
+        today_tab = get_today_tab_name(today)
+        
+        service_type = st.selectbox("Service Type", ["MSW", "SS", "YW"])
+        zone_field = f"{service_type} Zone"
+        day_field = f"{service_type} Zone"
+        zone_to_day = {}
+        for row in address_df:
+            zone = row.get(zone_field)
+            day = row.get(day_field) or row.get("Day", "")
+            if zone:  
+                if zone not in zone_to_day:
+                    zone_to_day[zone] = row.get(f"{service_type} Zone") or row.get(f"{service_type} Day", "")
     
-    def get_weekday_idx(zone):
-        for i, day in enumerate(week_order):
-            if day.lower() in str(zone_to_day[zone]).lower():
-                return i
-        return 99
     
-    zones = sorted({row[zone_field] for row in address_df if row[zone_field]}, key=get_weekday_idx)
+        week_order = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        
+        def get_weekday_idx(zone):
+            for i, day in enumerate(week_order):
+                if day.lower() in str(zone_to_day[zone]).lower():
+                    return i
+            return 99
+        
+        zones = sorted({row[zone_field] for row in address_df if row[zone_field]}, key=get_weekday_idx)
+        
+        def weekday_to_week_order_idx(py_weekday):
+            return (py_weekday + 1) % 7
+        
+        today_py_idx = datetime.date.today().weekday()  
+        today_idx = weekday_to_week_order_idx(today_py_idx)  
+        
+        yesterday_idx = (today_idx - 1) % 7
+        yesterday_day = week_order[yesterday_idx]
+        
     
-    def weekday_to_week_order_idx(py_weekday):
-        return (py_weekday + 1) % 7
+        default_zone = None
+        for z in zones:
+            if yesterday_day.lower() in str(zone_to_day[z]).lower():
+                default_zone = z
+                break
+        if not default_zone:
+            default_zone = zones[0] if zones else ""
+        
     
-    today_py_idx = datetime.date.today().weekday()  
-    today_idx = weekday_to_week_order_idx(today_py_idx)  
+        zone = st.selectbox("Zone", zones, index=zones.index(default_zone) if default_zone in zones else 0)
     
-    yesterday_idx = (today_idx - 1) % 7
-    yesterday_day = week_order[yesterday_idx]
     
-
-    default_zone = None
-    for z in zones:
-        if yesterday_day.lower() in str(zone_to_day[z]).lower():
-            default_zone = z
-            break
-    if not default_zone:
-        default_zone = zones[0] if zones else ""
-    
-
-    zone = st.selectbox("Zone", zones, index=zones.index(default_zone) if default_zone in zones else 0)
-
-
-    address = st.selectbox(
-        "Address",
-        sorted({row["Address"] for row in address_df if row[zone_field] == zone})
-    )
-    route = next((row[f"{service_type} Route"] for row in address_df if row["Address"] == address), "")
-    whole_block = st.selectbox("Whole Block", ["NO", "YES"])
-    placement_exception = st.selectbox("Placement Exception?", ["NO", "YES"])
-    pe_address = st.text_input("PE Address") if placement_exception == "YES" else "N/A"
-    col1, col2 = st.columns([2, 1])
-    now = datetime.datetime.now(pytz.timezone("America/New_York"))
-    current_time_str = now.strftime("%I:%M")
-    default_ampm = "AM" if now.hour < 12 else "PM"
-
-    with col1:
-        called_in_time = st.text_input("Time Called In (HH:MM)", placeholder=current_time_str)
-    with col2:
-        ampm = st.selectbox("AM/PM", ["AM", "PM"], index=0 if default_ampm == "AM" else 1)
-
-    city_notes = st.text_area("City Notes (optional)")
-    submit_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
-
-    form_data = {
-        "Date": str(today), "Submitted By": name, "Time Called In": f"{called_in_time.strip()} {ampm}", "Zone": zone,
-        "Time Sent to JPM": submit_time, "Address": address, "Service Type": service_type, "Route": route,
-        "Whole Block": whole_block, "Placement Exception": placement_exception, "PE Address": pe_address,
-        "City Notes": city_notes, "Collection Status": "Pending"
-    }
-    
-    missing_fields = []
-    
-    time_format_valid = bool(re.match(r"^([1-9]|1[0-2]):[0-5][0-9]$", called_in_time.strip()))
-    if not called_in_time.strip():
-        missing_fields.append("Time Called In")
-    elif not time_format_valid:
-        st.error("⏰ Enter time as HH:MM in 12-hour format (e.g., 9:30 or 10:45)")
-        missing_fields.append("Time Called In (invalid format)")
-    
-    if placement_exception == "YES" and not pe_address.strip():
-        missing_fields.append("PE Address")
-    
-    if missing_fields:
-        st.error(f"🚫 Please complete the following required fields: {', '.join(missing_fields)}")
-        st.stop()
-
-    if st.button("Submit Missed Stop"):
-
-        master_id = get_master_log_id(drive, FOLDER_ID)
-        master_ws = gs_client.open_by_key(master_id).sheet1
-        master_records = master_ws.get_all_records()
-
-        duplicate_today = any(
-            row.get("Address") == address and row.get("Date") == str(today)
-            for row in master_records
+        address = st.selectbox(
+            "Address",
+            sorted({row["Address"] for row in address_df if row[zone_field] == zone})
         )
-        if duplicate_today:
-            st.error("🚫 This address has already been submitted today.")
+        route = next((row[f"{service_type} Route"] for row in address_df if row["Address"] == address), "")
+        whole_block = st.selectbox("Whole Block", ["NO", "YES"])
+        placement_exception = st.selectbox("Placement Exception?", ["NO", "YES"])
+        pe_address = st.text_input("PE Address") if placement_exception == "YES" else "N/A"
+        col1, col2 = st.columns([2, 1])
+        now = datetime.datetime.now(pytz.timezone("America/New_York"))
+        current_time_str = now.strftime("%I:%M")
+        default_ampm = "AM" if now.hour < 12 else "PM"
+    
+        with col1:
+            called_in_time = st.text_input("Time Called In (HH:MM)", placeholder=current_time_str)
+        with col2:
+            ampm = st.selectbox("AM/PM", ["AM", "PM"], index=0 if default_ampm == "AM" else 1)
+    
+        city_notes = st.text_area("City Notes (optional)")
+        submit_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
+    
+        form_data = {
+            "Date": str(today), "Submitted By": name, "Time Called In": f"{called_in_time.strip()} {ampm}", "Zone": zone,
+            "Time Sent to JPM": submit_time, "Address": address, "Service Type": service_type, "Route": route,
+            "Whole Block": whole_block, "Placement Exception": placement_exception, "PE Address": pe_address,
+            "City Notes": city_notes, "Collection Status": "Pending"
+        }
+        
+        missing_fields = []
+        
+        time_format_valid = bool(re.match(r"^([1-9]|1[0-2]):[0-5][0-9]$", called_in_time.strip()))
+        if not called_in_time.strip():
+            missing_fields.append("Time Called In")
+        elif not time_format_valid:
+            st.error("⏰ Enter time as HH:MM in 12-hour format (e.g., 9:30 or 10:45)")
+            missing_fields.append("Time Called In (invalid format)")
+        
+        if placement_exception == "YES" and not pe_address.strip():
+            missing_fields.append("PE Address")
+        
+        if missing_fields:
+            st.error(f"🚫 Please complete the following required fields: {', '.join(missing_fields)}")
             st.stop()
     
-        matching_entries = [
-            row for row in master_records
-            if row.get("Address") == address
-        ]
-        form_data["Times Missed"] = str(len(matching_entries) + 1)
-        form_data["Last Missed"] = matching_entries[-1]["Date"] if matching_entries else "First Time"
-
-        ws = weekly_ss.worksheet(today_tab)
-        ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
-        master_ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
+        if st.button("Submit Missed Stop"):
     
-        st.info("Miss submitted successfully!")
-        st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
-
-
+            master_id = get_master_log_id(drive, FOLDER_ID)
+            master_ws = gs_client.open_by_key(master_id).sheet1
+            master_records = master_ws.get_all_records()
+    
+            duplicate_today = any(
+                row.get("Address") == address and row.get("Date") == str(today)
+                for row in master_records
+            )
+            if duplicate_today:
+                st.error("🚫 This address has already been submitted today.")
+                st.stop()
+        
+            matching_entries = [
+                row for row in master_records
+                if row.get("Address") == address
+            ]
+            form_data["Times Missed"] = str(len(matching_entries) + 1)
+            form_data["Last Missed"] = matching_entries[-1]["Date"] if matching_entries else "First Time"
+    
+            ws = weekly_ss.worksheet(today_tab)
+            ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
+            master_ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
+        
+            st.info("Miss submitted successfully!")
+            st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
+    
+    else:
+        help_page(name, user_role)
 
 
 def jpm_ops():
