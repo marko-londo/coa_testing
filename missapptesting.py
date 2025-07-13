@@ -345,6 +345,9 @@ def help_page(name, user_role):
 
 def city_ops(name, user_role):
     st.sidebar.subheader("City of Allentown")
+    if "city_mode" not in st.session_state:
+        st.session_state.city_mode = "Submit a Missed Pickup"
+
     city_mode = st.sidebar.radio("Select Action:", ["Submit a Missed Pickup", "Help"])
 
     if city_mode == "Submit a Missed Pickup":
