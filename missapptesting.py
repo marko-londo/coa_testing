@@ -113,8 +113,9 @@ def upload_image_to_drive(file, folder_id, credentials):
 
 
 def get_next_saturday(today):
-    days_until_sun = (6 - today.weekday()) % 7
-    return today + datetime.timedelta(days=days_until_sun)
+    days_until_sat = (5 - today.weekday()) % 7
+    return today + datetime.timedelta(days=days_until_sat)
+
 
 def upload_to_dropbox(file, row_index, service_type):
     import dropbox
@@ -167,13 +168,14 @@ def get_monday_of_week(saturday_date):
     return saturday_date - datetime.timedelta(days=5)
 
 def get_today_tab_name(today):
-    next_sunday = get_next_sunday(today)
-    monday_of_week = next_sunday - datetime.timedelta(days=6)
+    next_saturday = get_next_saturday(today)
+    # Monday before (or on) next Saturday
+    monday_of_week = next_saturday - datetime.timedelta(days=5)
     weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     tab_dates = { (monday_of_week + datetime.timedelta(days=i)): weekdays[i] for i in range(7) }
+    # Special: If today is after Saturday (i.e., Sunday), it will still get its tab
     day_label = tab_dates.get(today, today.strftime('%A'))
     return f"{day_label} {today.month}/{today.day}/{str(today.year)[-2:]}"
-
 
 def ensure_gsheet_exists(drive, folder_id, title):
     results = drive.files().list(
