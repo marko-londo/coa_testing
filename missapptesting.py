@@ -10,7 +10,6 @@ import pytz
 import re
 import dropbox
 
-
 # ----------- 1. AUTH -----------
 credentials_json = st.secrets["auth_users"]["usernames"]
 credentials = json.loads(credentials_json)
