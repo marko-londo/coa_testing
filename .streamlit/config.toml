@@ -3,8 +3,8 @@ primaryColor = "#6CA0DC"
 backgroundColor = "#0e1117"
 secondaryBackgroundColor = "#181b20"
 textColor = "#fafafa"
-font = "Montserrat, sans-serif"
+font = "Poppins, sans-serif"
 
 [[theme.fontFaces]]
-family = "Montserrat"
-src = "url('https://fonts.gstatic.com/s/montserrat/v25/JTUQjIg1_i6t8kCHKm459WxhzA.woff2')"
+family = "Poppins"
+src = "url('https://fonts.gstatic.com/s/poppins/v21/pxiEyp8kv8JHgFVrFJA.woff2')"
