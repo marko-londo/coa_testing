@@ -135,10 +135,9 @@ def upload_to_dropbox(file, row_index, service_type):
         app_key=app_key,
         app_secret=app_secret
     )
-    today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
-.strftime("%-m.%-d.%Y")  # For 7.12.2025
+    today = datetime.datetime.now(pytz.timezone("America/New_York")).date().strftime("%-m.%-d.%Y")
     filename = f"{row_index}-{service_type}-{today}"
-
+    
     # Use original file extension if possible
     ext = ""
     if hasattr(file, "name") and "." in file.name:
