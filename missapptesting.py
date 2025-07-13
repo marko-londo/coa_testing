@@ -312,7 +312,7 @@ def help_page(name, user_role):
             else:
                 st.info("Sorry to hear that. For more detailed feedback or to report an issue, please use the button below.")
         except Exception as e:
-            st.warning(f"Failed to write to feedback sheet: {e}")
+            st.error(f"Failed to write to feedback sheet: {e}")
 
     st.markdown("---")
 
@@ -334,7 +334,7 @@ def help_page(name, user_role):
                 feedback_ws.append_row(row)
                 st.info("Thank you for your feedback! It has been recorded.")
             except Exception as e:
-                st.warning(f"Failed to write to feedback sheet: {e}")
+                st.error(f"Failed to write to feedback sheet: {e}")
             st.rerun()
 
     if st.button("Submit Feedback / Report Bug / Request Feature"):
