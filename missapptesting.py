@@ -73,16 +73,19 @@ def updates():
     """
 
     st.markdown(
-    """
-    <h1 style='color:#6CA0DC; margin-bottom:0;'>Missed Pickup Portal</h1>
-    <div style='color:#FF8C8C; font-size:1.1em; font-style:italic; margin-bottom:12px;'>
-        City of Allentown | JP Mascaro & Sons
-    </div>
-    <hr style='border:1px solid #ececec; margin-top:0;'>
-    """,
-    unsafe_allow_html=True
+        """
+        <h1 style='color:#6CA0DC; margin-bottom:0;'>Missed Pickup Portal</h1>
+        <div style='font-size:1.1em; font-style:italic; margin-bottom:12px;'>
+            <span style='color:#FF8C8C;'>City of Allentown</span>
+            <span style='color:#fff; padding:0 10px;'>|</span>
+            <span style='color:#FF8C8C;'>JP Mascaro & Sons</span>
+        </div>
+        <hr style='border:1px solid #ececec; margin-top:0;'>
+        """,
+        unsafe_allow_html=True
     )
     st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
+
 
     cl_col, doc_col = st.columns([3,1])
 
