@@ -482,7 +482,6 @@ def city_ops():
     else:
         help_page(name, user_role)
 
-
 def jpm_ops():
     today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
 
