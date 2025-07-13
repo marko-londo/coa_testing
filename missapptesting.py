@@ -76,7 +76,7 @@ def updates():
         <style>
         h1 {
             font-family: 'Poppins', sans-serif !important;
-            font-weight: 800 !important;
+            font-weight: 600 !important;
             font-size: 3em !important;
             letter-spacing: 1.5px !important;
             /* Drop shadow for depth, outline for clarity */
