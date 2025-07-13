@@ -33,49 +33,52 @@ dbx = dropbox.Dropbox(
 SERVICE_ACCOUNT_INFO = st.secrets["google_service_account"]
 FOLDER_ID = '18f3aW-ZI5-tNKBCfHwToQ7MXQ3DS1MFj'
 ADDRESS_LIST_SHEET_URL = "https://docs.google.com/spreadsheets/d/1JJeufDkoQ6p_LMe5F-Nrf_t0r_dHrAHu8P8WXi96V9A/edit#gid=0"
-TEMPLATE_ID = "Do not remove this yet"
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 credentials_gs = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
 gs_client = gspread.authorize(credentials_gs)
 
-name, authentication_status, username = authenticator.login('main')
 
-if authentication_status is False:
-    st.error("Incorrect username or password. Please try again.")
-    st.stop()
-elif authentication_status is None:
-    st.warning("Please enter your username and password.")
-    st.stop()
 
-st.success(f"Welcome, {name}!")
-authenticator.logout("Logout", "sidebar")
+def user_login(authenticator, credentials):
+    name, authentication_status, username = authenticator.login('main')
 
-# ----------- VERSION & CHANGELOG -----------
-APP_VERSION = "v1.2"
-CHANGELOG = """
-- **v1.2** (2025-07-12):  
-    - Fixed Dropbox temporary token issue.
-    - Fixed Image upload issue.
-    - Uploaded images are now automatically renamed based on relevant data (row, date, service type, etc.) for easier identification and organization.
-"""
+    if authentication_status is False:
+        st.error("Incorrect username or password. Please try again.")
+        st.stop()
+    elif authentication_status is None:
+        st.warning("Please enter your username and password.")
+        st.stop()
 
-st.title("Missed Stops Manager")
-st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
+    user_obj = credentials["usernames"].get(username, {})
+    user_role = user_obj.get("role", "city")
+    st.success(f"Welcome, {name}!")
+    authenticator.logout("Logout", "sidebar")  # Or just "Logout"
+    return name, username, user_role
 
-cl_col, doc_col = st.columns([3,1])
+def updates():
+    APP_VERSION = "v1.2"
+    CHANGELOG = """
+    - **v1.2** (2025-07-12):  
+        - Fixed Dropbox temporary token issue.
+        - Fixed Image upload issue.
+        - Uploaded images are now automatically renamed based on relevant data (row, date, service type, etc.) for easier identification and organization.
+    """
 
-with cl_col:
-    with st.expander("What's New?", expanded=False):
-        st.markdown(CHANGELOG)
+    st.title("Missed Stops Manager")
+    st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
 
-# ---- Documentation Link ----
+    cl_col, doc_col = st.columns([3,1])
 
-with doc_col:
+    with cl_col:
+        with st.expander("What's New?", expanded=False):
+                st.markdown(CHANGELOG)
+
+    with doc_col:
+            
+        DOC_LINK = "https://docs.google.com/document/d/1UkKj56Qn-25gMWheC-G2rC6YRJzeGsfxk9k2XNLpeTw"
         
-    DOC_LINK = "https://docs.google.com/document/d/1UkKj56Qn-25gMWheC-G2rC6YRJzeGsfxk9k2XNLpeTw"
-    
-    st.link_button("📄 View Full Docs", DOC_LINK)
+        st.link_button("📄 View Full Docs", DOC_LINK)
 
 COLUMNS = [
     "Date", "Submitted By", "Time Called In", "Zone", "Time Sent to JPM",
@@ -132,7 +135,8 @@ def upload_to_dropbox(file, row_index, service_type):
         app_key=app_key,
         app_secret=app_secret
     )
-    today = datetime.date.today().strftime("%-m.%-d.%Y")  # For 7.12.2025
+    today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
+.strftime("%-m.%-d.%Y")  # For 7.12.2025
     filename = f"{row_index}-{service_type}-{today}"
 
     # Use original file extension if possible
@@ -240,22 +244,16 @@ def load_address_df(service_account_info, address_sheet_url):
 
 address_df = load_address_df(SERVICE_ACCOUNT_INFO, ADDRESS_LIST_SHEET_URL)
 
-# ----------- MAIN PAGE SELECTOR -----------
-main_mode = st.sidebar.radio(
-    "Choose your mode:",
-    ["Submit a Missed Stop (City Side)", "JPM Operations (Dispatch/Complete)"]
-)
 
-today = datetime.date.today()
-drive = build('drive', 'v3', credentials=credentials_gs)
-sheet_title = get_sheet_title(today)
-weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
-weekly_ss = gs_client.open_by_key(weekly_id)
-today_tab = get_today_tab_name(today)
+def city_ops():
+    today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
 
-# ----------- PAGE 1: SUBMISSION -----------
-if main_mode == "Submit a Missed Stop (City Side)":
-    # ----- Build a {zone: collection_day} mapping -----
+    drive = build('drive', 'v3', credentials=credentials_gs)
+    sheet_title = get_sheet_title(today)
+    weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
+    weekly_ss = gs_client.open_by_key(weekly_id)
+    today_tab = get_today_tab_name(today)
+    
     service_type = st.selectbox("Service Type", ["MSW", "SS", "YW"])
     zone_field = f"{service_type} Zone"
     day_field = f"{service_type} Zone"
@@ -385,12 +383,21 @@ if main_mode == "Submit a Missed Stop (City Side)":
 
 
 
-# ========== PAGE 2: JPM OPERATIONS ==========
-else:
-    st.subheader("JPM Side: Dispatch or Complete Misses")
-    jpm_mode = st.radio("JPM Action:", ["Dispatch Misses", "Complete a Missed Stop"])
+def jpm_ops():
+    today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
 
-    today = datetime.date.today()
+    drive = build('drive', 'v3', credentials=credentials_gs)
+    sheet_title = get_sheet_title(today)
+    weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
+    weekly_ss = gs_client.open_by_key(weekly_id)
+    today_tab = get_today_tab_name(today)
+
+    st.sidebar.subheader("JPM Actions")
+    jpm_mode = st.sidebar.radio("Select Action:", ["Dispatch Misses", "Complete a Missed Stop"])
+
+
+    today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
+
     sheet_title = get_sheet_title(today)
     drive = build('drive', 'v3', credentials=credentials_gs)
     weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
@@ -564,3 +571,15 @@ else:
                 st.session_state.reload_to_complete = True
                 st.success("Miss completed and logged!")
                 st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
+
+name, username, user_role = user_login(authenticator, credentials)
+
+updates()  # (Show changelog/docs/etc)
+
+if user_role == "city":
+    city_ops()
+elif user_role == "jpm":
+    jpm_ops()
+else:
+    st.error("Role not recognized. Please contact your admin.")
+
