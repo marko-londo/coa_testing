@@ -31,7 +31,6 @@ dbx = dropbox.Dropbox(
 )
 
 SERVICE_ACCOUNT_INFO = st.secrets["google_service_account"]
-TEMPLATE_ID = '1uBGHqyFhyA79l9_R37wWdKAPrtnuikWIXvTye7Bt_dc'
 FOLDER_ID = '18f3aW-ZI5-tNKBCfHwToQ7MXQ3DS1MFj'
 ADDRESS_LIST_SHEET_URL = "https://docs.google.com/spreadsheets/d/1JJeufDkoQ6p_LMe5F-Nrf_t0r_dHrAHu8P8WXi96V9A/edit#gid=0"
 
@@ -181,11 +180,14 @@ def ensure_gsheet_exists(drive, folder_id, template_id, title):
     files = results.get('files', [])
     if files:
         return files[0]['id']
-    copied = drive.files().copy(
-        fileId=template_id,
-        body={'name': title, 'parents': [folder_id]}
-    ).execute()
-    return copied['id']
+    else:
+        # Sheet does NOT exist—show error, do NOT copy template.
+        st.error(
+            f"Sheet '{title}' does not exist in the specified folder.\n"
+            "Please contact your admin to create this week's log sheet."
+        )
+        st.stop()
+
     
 def get_master_log_id(drive, client, folder_id, template_id):
     results = drive.files().list(
