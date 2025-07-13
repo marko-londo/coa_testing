@@ -350,7 +350,7 @@ def help_page(name, user_role):
 
 
 
-def city_ops():
+def city_ops(name, user_role):
     st.sidebar.subheader("City of Allentown")
     city_mode = st.sidebar.radio("Select Action:", ["Submit a Missed Pickup", "Help"])
 
@@ -482,7 +482,7 @@ def city_ops():
     else:
         help_page(name, user_role)
 
-def jpm_ops():
+def jpm_ops(name, user_role):
     today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
 
     drive = build('drive', 'v3', credentials=credentials_gs)
@@ -674,9 +674,9 @@ name, username, user_role = user_login(authenticator, credentials)
 
 updates()
 if user_role == "city":
-    city_ops()
+    city_ops(name, user_role)
 elif user_role == "jpm":
-    jpm_ops()
+    jpm_ops(name, user_role)
 else:
     st.error("Role not recognized. Please contact your admin.")
 
