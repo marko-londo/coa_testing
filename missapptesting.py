@@ -11,18 +11,17 @@ import re
 import dropbox
 
 
-
-# ----------- 1. AUTH -----------
 credentials_json = st.secrets["auth_users"]["usernames"]
+
 credentials = json.loads(credentials_json)
 
 authenticator = stauth.Authenticate(
-    credentials, 'missed_stops_app', 'some_secret_key', cookie_expiry_days=3
-)
-
+    credentials, 'missed_stops_app', 'some_secret_key', cookie_expiry_days=3)
 
 app_key = st.secrets["dropbox"]["app_key"]
+
 app_secret = st.secrets["dropbox"]["app_secret"]
+
 refresh_token = st.secrets["dropbox"]["refresh_token"]
 
 dbx = dropbox.Dropbox(
@@ -32,11 +31,15 @@ dbx = dropbox.Dropbox(
 )
 
 SERVICE_ACCOUNT_INFO = st.secrets["google_service_account"]
+
 FOLDER_ID = '18f3aW-ZI5-tNKBCfHwToQ7MXQ3DS1MFj'
+
 ADDRESS_LIST_SHEET_URL = "https://docs.google.com/spreadsheets/d/1JJeufDkoQ6p_LMe5F-Nrf_t0r_dHrAHu8P8WXi96V9A/edit#gid=0"
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+
 credentials_gs = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
+
 gs_client = gspread.authorize(credentials_gs)
 
 st.set_page_config(
@@ -46,7 +49,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
     )
 
-
 def user_login(authenticator, credentials):
     name, authentication_status, username = authenticator.login('main')
 
@@ -54,13 +56,13 @@ def user_login(authenticator, credentials):
         st.error("Incorrect username or password. Please try again.")
         st.stop()
     elif authentication_status is None:
-        st.info("Please enter your username and password.")
+        st.warning("Please enter your username and password.")
         st.stop()
 
     user_obj = credentials["usernames"].get(username, {})
     user_role = user_obj.get("role", "city")
-    st.info(f"Welcome, {name}!")
-    authenticator.logout("Logout", "sidebar")  # Or just "Logout"
+    st.success(f"Welcome, {name}!")
+    authenticator.logout("Logout", "sidebar")
     return name, username, user_role
 
 def updates():
@@ -72,24 +74,6 @@ def updates():
         - Uploaded images are now automatically renamed based on relevant data (row, date, service type, etc.) for easier identification and organization.
     """
 
-    st.markdown("""
-        <style>
-        h1 {
-            font-family: 'Poppins', sans-serif !important;
-            font-weight: 700 !important;
-            font-size: 3em !important;
-            letter-spacing: 1.5px !important;
-            /* Drop shadow for depth, outline for clarity */
-            text-shadow:
-                -1px -1px 0 #181b20,
-                 1px -1px 0 #181b20,
-                -1px  1px 0 #181b20,
-                 1px  1px 0 #181b20,
-                 0  3px 12px #6CA0DC55;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-    
     st.markdown(
         """
         <h1 style='color:#6CA0DC; margin-bottom:0;'>Missed Pickup Portal</h1>
@@ -103,7 +87,6 @@ def updates():
         unsafe_allow_html=True
     )
     st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
-
 
     cl_col, doc_col = st.columns([3,1])
 
@@ -132,10 +115,8 @@ def upload_image_to_drive(file, folder_id, credentials):
 
     drive_service = build("drive", "v3", credentials=credentials)
 
-    # Use original filename or fallback
     filename = getattr(file, "name", "upload.jpg")
 
-    # Upload the file
     file_metadata = {
         "name": filename,
         "parents": [folder_id]
@@ -147,13 +128,11 @@ def upload_image_to_drive(file, folder_id, credentials):
         fields="id"
     ).execute()
 
-    # Return shareable link
     file_id = uploaded_file.get("id")
     return f"https://drive.google.com/uc?id={file_id}"
 
 
 def get_next_saturday(today):
-    # On Sunday, use yesterday; otherwise, use today
     if today.weekday() == 6:  # Sunday
         base = today - datetime.timedelta(days=1)
     else:
@@ -175,7 +154,6 @@ def upload_to_dropbox(file, row_index, service_type):
     today = datetime.datetime.now(pytz.timezone("America/New_York")).date().strftime("%-m.%-d.%Y")
     filename = f"{row_index}-{service_type}-{today}"
     
-    # Use original file extension if possible
     ext = ""
     if hasattr(file, "name") and "." in file.name:
         ext = file.name[file.name.rfind("."):]
@@ -214,11 +192,9 @@ def get_monday_of_week(saturday_date):
 
 def get_today_tab_name(today):
     next_saturday = get_next_saturday(today)
-    # Monday before (or on) next Saturday
     monday_of_week = next_saturday - datetime.timedelta(days=5)
     weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     tab_dates = { (monday_of_week + datetime.timedelta(days=i)): weekdays[i] for i in range(7) }
-    # Special: If today is after Saturday (i.e., Sunday), it will still get its tab
     day_label = tab_dates.get(today, today.strftime('%A'))
     return f"{day_label} {today.month}/{today.day}/{str(today.year)[-2:]}"
 
@@ -280,6 +256,73 @@ def load_address_df(service_account_info, address_sheet_url):
 
 address_df = load_address_df(SERVICE_ACCOUNT_INFO, ADDRESS_LIST_SHEET_URL)
 
+def help_page():
+    st.subheader("Help & Support")
+    st.write(
+        "Welcome to the Missed Pickup Portal Help page. "
+        "For detailed documentation, click the “View Full Docs” button above. "
+        "If you would like to submit feedback, request additional features, or report a bug, "
+        "please use the 'Submit Feedback' button below. "
+        "If you are in need of immediate assistance, please contact us via email or phone. "
+        "Thank you for using our service!"
+    )
+
+    st.markdown("---")
+
+    st.write("#### Rate your overall experience:")
+    feedback = st.feedback("thumbs", key="overall_exp")
+
+    FEEDBACK_SHEET_ID = "1fUrJymiIfC5GS_ofz9x4czUG6e3b8W63mMwLUyxHvFM"
+    FEEDBACK_SHEET_NAME = "Feedback"
+
+    if feedback is not None:
+        # Map thumbs to text
+        rating_map = {0: "Thumbs Down", 1: "Thumbs Up"}
+        rating_text = rating_map.get(feedback, str(feedback))
+
+        row = [
+            name,
+            user_role,
+            datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S"),
+            "Quick Feedback",
+            "",  # No details for thumbs, just the rating
+            rating_text
+        ]
+        try:
+            feedback_ws = gs_client.open_by_key(FEEDBACK_SHEET_ID).worksheet(FEEDBACK_SHEET_NAME)
+            feedback_ws.append_row(row)
+            if feedback == 1:
+                st.success("Thanks for the thumbs up! 👍")
+            else:
+                st.info("Sorry to hear that. For more detailed feedback or to report an issue, please use the button below.")
+        except Exception as e:
+            st.warning(f"Failed to write to feedback sheet: {e}")
+
+    st.markdown("---")
+
+    @st.dialog("Submit Feedback / Report Bug / Request Feature")
+    def feedback_dialog():
+        feedback_type = st.selectbox("Type", ["Bug Report", "Feature Request", "General Feedback"])
+        details = st.text_area("Describe the issue or idea")
+        if st.button("Submit"):
+            row = [
+                name,
+                user_role,
+                datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S"),
+                feedback_type,
+                details,
+                ""  # Leave rating blank for detailed feedback
+            ]
+            try:
+                feedback_ws = gs_client.open_by_key(FEEDBACK_SHEET_ID).worksheet(FEEDBACK_SHEET_NAME)
+                feedback_ws.append_row(row)
+                st.success("Thank you for your feedback! It has been recorded.")
+            except Exception as e:
+                st.warning(f"Failed to write to feedback sheet: {e}")
+            st.rerun()
+
+    if st.button("Submit Feedback / Report Bug / Request Feature"):
+        feedback_dialog()
 
 def city_ops():
     today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
@@ -293,17 +336,15 @@ def city_ops():
     service_type = st.selectbox("Service Type", ["MSW", "SS", "YW"])
     zone_field = f"{service_type} Zone"
     day_field = f"{service_type} Zone"
-    # Build {zone: day} from your address_df
     zone_to_day = {}
     for row in address_df:
         zone = row.get(zone_field)
         day = row.get(day_field) or row.get("Day", "")
-        if zone:  # Avoid blanks/None
-            # Find first day encountered for zone
+        if zone:  
             if zone not in zone_to_day:
                 zone_to_day[zone] = row.get(f"{service_type} Zone") or row.get(f"{service_type} Day", "")
 
-    # Use your standard order (edit as needed)
+
     week_order = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     
     def get_weekday_idx(zone):
@@ -317,13 +358,13 @@ def city_ops():
     def weekday_to_week_order_idx(py_weekday):
         return (py_weekday + 1) % 7
     
-    today_py_idx = datetime.date.today().weekday()  # 0=Monday, ..., 6=Sunday
-    today_idx = weekday_to_week_order_idx(today_py_idx)  # 0=Sunday, ..., 6=Saturday
+    today_py_idx = datetime.date.today().weekday()  
+    today_idx = weekday_to_week_order_idx(today_py_idx)  
     
     yesterday_idx = (today_idx - 1) % 7
     yesterday_day = week_order[yesterday_idx]
     
-    # Find the first zone whose assigned day matches yesterday's day
+
     default_zone = None
     for z in zones:
         if yesterday_day.lower() in str(zone_to_day[z]).lower():
@@ -332,10 +373,9 @@ def city_ops():
     if not default_zone:
         default_zone = zones[0] if zones else ""
     
-    # Now build dropdown with correct order and default
+
     zone = st.selectbox("Zone", zones, index=zones.index(default_zone) if default_zone in zones else 0)
-    
-    # The rest remains the same!
+
 
     address = st.selectbox(
         "Address",
@@ -365,33 +405,28 @@ def city_ops():
         "City Notes": city_notes, "Collection Status": "Pending"
     }
     
-    # (Continue with your existing validation and submit logic as before)
-
-    
     missing_fields = []
     
-    # Validate time format (e.g., 9:30 or 09:30)
     time_format_valid = bool(re.match(r"^([1-9]|1[0-2]):[0-5][0-9]$", called_in_time.strip()))
     if not called_in_time.strip():
         missing_fields.append("Time Called In")
     elif not time_format_valid:
-        st.info("⏰ Enter time as HH:MM in 12-hour format (e.g., 9:30 or 10:45)")
+        st.warning("⏰ Enter time as HH:MM in 12-hour format (e.g., 9:30 or 10:45)")
         missing_fields.append("Time Called In (invalid format)")
     
     if placement_exception == "YES" and not pe_address.strip():
         missing_fields.append("PE Address")
     
     if missing_fields:
-        st.info(f"🚫 Please complete the following required fields: {', '.join(missing_fields)}")
+        st.warning(f"🚫 Please complete the following required fields: {', '.join(missing_fields)}")
         st.stop()
 
     if st.button("Submit Missed Stop"):
-        # --- Check for past misses in Master Log ---
+
         master_id = get_master_log_id(drive, FOLDER_ID)
         master_ws = gs_client.open_by_key(master_id).sheet1
         master_records = master_ws.get_all_records()
-    
-        # --- Prevent duplicate same-day submissions ---
+
         duplicate_today = any(
             row.get("Address") == address and row.get("Date") == str(today)
             for row in master_records
@@ -400,20 +435,18 @@ def city_ops():
             st.error("🚫 This address has already been submitted today.")
             st.stop()
     
-        # --- Track past misses ---
         matching_entries = [
             row for row in master_records
             if row.get("Address") == address
         ]
         form_data["Times Missed"] = str(len(matching_entries) + 1)
         form_data["Last Missed"] = matching_entries[-1]["Date"] if matching_entries else "First Time"
-    
-        # --- Write to sheets ---
+
         ws = weekly_ss.worksheet(today_tab)
         ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
         master_ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
     
-        st.info("Miss submitted successfully!")
+        st.success("Miss submitted successfully!")
         st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
 
@@ -428,8 +461,8 @@ def jpm_ops():
     weekly_ss = gs_client.open_by_key(weekly_id)
     today_tab = get_today_tab_name(today)
 
-    st.sidebar.subheader("JPM Actions")
-    jpm_mode = st.sidebar.radio("Select Action:", ["Dispatch Misses", "Complete a Missed Stop"])
+    st.sidebar.subheader("JPM Operations")
+    jpm_mode = st.sidebar.radio("Select Action:", ["Dispatch Misses", "Complete a Missed Stop", "Help"])
 
 
     today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
@@ -498,11 +531,11 @@ def jpm_ops():
                     )
                     if match_idx:
                         update_rows(master_ws, [match_idx], {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
-                st.info(f"Dispatched {len(indices)} missed stop(s)!")
+                st.success(f"Dispatched {len(indices)} missed stop(s)!")
                 st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
 
-    else:  # Complete Misses
+    elif jpm_mode == "Complete a Missed Stop":
         try:
             ws = weekly_ss.worksheet(today_tab)
         except gspread.exceptions.WorksheetNotFound:
@@ -534,12 +567,11 @@ def jpm_ops():
                 driver_checkin = st.text_input("Driver Check-in Time (HH:MM)", placeholder=current_time_str)
             with col2:
                 ampm2 = st.selectbox("AM/PM (Check-in)", ["AM", "PM"], index=0 if default_ampm == "AM" else 1)
-            # Accepts 1 or 2 digit hour, leading zero optional
+
             valid_ci = bool(re.match(r"^([1-9]|1[0-2]):[0-5][0-9]$", driver_checkin.strip()))
             if not valid_ci and driver_checkin:
-                st.info("⏰ Enter check-in time in 12-hour format, e.g., 1:30 or 09:45")
-            
-            # Normalize format for consistency (pad hour if needed)
+                st.warning("⏰ Enter check-in time in 12-hour format, e.g., 1:30 or 09:45")
+
             if valid_ci:
                 parts = driver_checkin.strip().split(":")
                 hour = parts[0].zfill(2)
@@ -548,7 +580,6 @@ def jpm_ops():
                 check_in_time = f"{formatted_checkin} {ampm2}"
             else:
                 check_in_time = ""
-
 
             collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out"])
             jpm_notes = st.text_area("JPM Notes")
@@ -565,7 +596,6 @@ def jpm_ops():
                 now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
                 check_in_time = f"{driver_checkin} {ampm2}"
             
-                # Upload image now (not earlier)
                 if uploaded_image:
                     try:
                         uploaded_image.seek(0)
@@ -586,8 +616,6 @@ def jpm_ops():
                     "JPM Notes": jpm_notes,
                     "Image": image_link,
                 }
-            
-                # update_rows, etc...
 
                 update_rows(ws, [chosen["row_idx"]], updates)
 
@@ -605,13 +633,16 @@ def jpm_ops():
                     update_rows(master_ws, [match_idx], updates)
 
                 st.session_state.reload_to_complete = True
-                st.info("Miss completed and logged!")
+                st.success("Miss completed and logged!")
                 st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
+
+    else:
+        help_page()
+
 
 name, username, user_role = user_login(authenticator, credentials)
 
-updates()  # (Show changelog/docs/etc)
-
+updates()
 if user_role == "city":
     city_ops()
 elif user_role == "jpm":
