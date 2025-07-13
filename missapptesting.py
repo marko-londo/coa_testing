@@ -86,7 +86,6 @@ def updates():
     )
     st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
 
-
     cl_col, doc_col = st.columns([3,1])
 
     with cl_col:
