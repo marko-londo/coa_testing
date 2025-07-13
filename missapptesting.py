@@ -10,6 +10,7 @@ import pytz
 import re
 import dropbox
 
+
 credentials_json = st.secrets["auth_users"]["usernames"]
 
 credentials = json.loads(credentials_json)
@@ -255,7 +256,7 @@ def load_address_df(service_account_info, address_sheet_url):
 
 address_df = load_address_df(SERVICE_ACCOUNT_INFO, ADDRESS_LIST_SHEET_URL)
 
-def help_page():
+def help_page(name, user_role):
     st.subheader("Help & Support")
     st.write(
         "Welcome to the Missed Pickup Portal Help page. "
@@ -322,6 +323,7 @@ def help_page():
 
     if st.button("Submit Feedback / Report Bug / Request Feature"):
         feedback_dialog()
+
 
 def city_ops():
     today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
@@ -636,7 +638,7 @@ def jpm_ops():
                 st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
     else:
-        help_page()
+        help_page(name, user_role)
 
 
 name, username, user_role = user_login(authenticator, credentials)
