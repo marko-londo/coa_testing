@@ -461,14 +461,15 @@ def city_ops(name, user_role):
             master_ws = gs_client.open_by_key(master_id).sheet1
             master_records = master_ws.get_all_records()
     
-            duplicate_today = any(
-                row.get("Address") == address and row.get("Date") == str(today)
+            duplicate_pending = any(
+                row.get("Address") == address and
+                str(row.get("Collection Status", "")).strip().upper() == "PENDING"
                 for row in master_records
             )
-            if duplicate_today:
-                st.error("🚫 This address has already been submitted today.")
+            if duplicate_pending:
+                st.error("🚫 This address already has a pending missed stop. Please close it out before submitting a new one.")
                 st.stop()
-        
+
             matching_entries = [
                 row for row in master_records
                 if row.get("Address") == address
