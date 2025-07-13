@@ -54,7 +54,7 @@ def user_login(authenticator, credentials):
         st.error("Incorrect username or password. Please try again.")
         st.stop()
     elif authentication_status is None:
-        st.warning("Please enter your username and password.")
+        st.info("Please enter your username and password.")
         st.stop()
 
     user_obj = credentials["usernames"].get(username, {})
@@ -375,14 +375,14 @@ def city_ops():
     if not called_in_time.strip():
         missing_fields.append("Time Called In")
     elif not time_format_valid:
-        st.warning("⏰ Enter time as HH:MM in 12-hour format (e.g., 9:30 or 10:45)")
+        st.info("⏰ Enter time as HH:MM in 12-hour format (e.g., 9:30 or 10:45)")
         missing_fields.append("Time Called In (invalid format)")
     
     if placement_exception == "YES" and not pe_address.strip():
         missing_fields.append("PE Address")
     
     if missing_fields:
-        st.warning(f"🚫 Please complete the following required fields: {', '.join(missing_fields)}")
+        st.info(f"🚫 Please complete the following required fields: {', '.join(missing_fields)}")
         st.stop()
 
     if st.button("Submit Missed Stop"):
@@ -537,7 +537,7 @@ def jpm_ops():
             # Accepts 1 or 2 digit hour, leading zero optional
             valid_ci = bool(re.match(r"^([1-9]|1[0-2]):[0-5][0-9]$", driver_checkin.strip()))
             if not valid_ci and driver_checkin:
-                st.warning("⏰ Enter check-in time in 12-hour format, e.g., 1:30 or 09:45")
+                st.info("⏰ Enter check-in time in 12-hour format, e.g., 1:30 or 09:45")
             
             # Normalize format for consistency (pad hour if needed)
             if valid_ci:
