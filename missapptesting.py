@@ -199,7 +199,6 @@ def upload_to_dropbox(file, row_index, service_type):
             raise
     return url.replace("?dl=0", "?raw=1")
 
-
 def get_sheet_title(today):
     next_saturday = get_next_saturday(today)
     return f"Misses Week Ending {next_saturday.strftime('%Y-%m-%d')}"
