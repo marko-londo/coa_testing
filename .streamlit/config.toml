@@ -3,8 +3,8 @@ primaryColor = "#6CA0DC"
 backgroundColor = "#0e1117"
 secondaryBackgroundColor = "#181b20"
 textColor = "#fafafa"
-font = "Roboto, sans-serif"
+font = "Roboto Mono, monospace"
 
 [[theme.fontFaces]]
-family = "Roboto"
-src = "url('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxM.woff2')"
+family = "Roboto Mono"
+src = "url('https://fonts.gstatic.com/s/robotomono/v22/L0x7DF4xlVMF-BfR8bXMIjhG7Zg.woff2')"
