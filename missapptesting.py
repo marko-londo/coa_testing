@@ -148,7 +148,6 @@ def upload_image_to_drive(file, folder_id, credentials):
     file_id = uploaded_file.get("id")
     return f"https://drive.google.com/uc?id={file_id}"
 
-
 def get_next_saturday(today):
     if today.weekday() == 6:  # Sunday
         base = today - datetime.timedelta(days=1)
@@ -156,7 +155,6 @@ def get_next_saturday(today):
         base = today
     days_until_sat = (5 - base.weekday()) % 7
     return base + datetime.timedelta(days=days_until_sat)
-
 
 def upload_to_dropbox(file, row_index, service_type):
     import dropbox
