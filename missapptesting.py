@@ -316,7 +316,7 @@ def help_page(name, user_role):
             feedback_ws.append_row(row)
             st.session_state.last_feedback_value = feedback  # Update the stored value
             if feedback == 1:
-                st.success("Thanks for the thumbs up! 👍")
+                st.info("Thanks for the thumbs up!")
             else:
                 st.info("Sorry to hear that. For more detailed feedback or to report an issue, please use the button below.")
         except Exception as e:
@@ -340,7 +340,7 @@ def help_page(name, user_role):
             try:
                 feedback_ws = gs_client.open_by_key(FEEDBACK_SHEET_ID).worksheet(FEEDBACK_SHEET_NAME)
                 feedback_ws.append_row(row)
-                st.success("Thank you for your feedback! It has been recorded.")
+                st.info("Thank you for your feedback! It has been recorded.")
             except Exception as e:
                 st.warning(f"Failed to write to feedback sheet: {e}")
             st.rerun()
