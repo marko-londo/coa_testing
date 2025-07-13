@@ -11,7 +11,7 @@ import re
 import dropbox
 
 st.set_page_config(
-    page_title="CoA Misses | JP Mascaro & Sons",
+    page_title="Missed Pickup Portal | JP Mascaro & Sons",
     page_icon="https://raw.githubusercontent.com/marko-londo/coa_testing/refs/heads/main/favicon.ico",
     layout="centered",  # or "wide"
     initial_sidebar_state="collapsed",
@@ -72,7 +72,7 @@ def updates():
         - Uploaded images are now automatically renamed based on relevant data (row, date, service type, etc.) for easier identification and organization.
     """
 
-    st.title("Missed Stops Manager")
+    st.title("Missed Pickup Portal")
     st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
 
     cl_col, doc_col = st.columns([3,1])
