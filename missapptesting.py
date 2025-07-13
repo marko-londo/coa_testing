@@ -348,7 +348,7 @@ if main_mode == "Submit a Missed Stop (City Side)":
 
     if st.button("Submit Missed Stop"):
         # --- Check for past misses in Master Log ---
-        master_id = get_master_log_id(drive, gs_client, FOLDER_ID)
+        master_id = get_master_log_id(drive, FOLDER_ID)
         master_ws = gs_client.open_by_key(master_id).sheet1
         master_records = master_ws.get_all_records()
     
@@ -436,7 +436,7 @@ else:
                 indices = [c["row_idx"] for c in chosen]
                 update_rows(ws, indices, {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
 
-                master_id = get_master_log_id(drive, gs_client, FOLDER_ID)
+                master_id = get_master_log_id(drive, FOLDER_ID)
                 master_ws = gs_client.open_by_key(master_id).sheet1
                 master_records = master_ws.get_all_records()
                 for c in chosen:
@@ -543,7 +543,7 @@ else:
 
                 update_rows(ws, [chosen["row_idx"]], updates)
 
-                master_id = get_master_log_id(drive, gs_client, FOLDER_ID)
+                master_id = get_master_log_id(drive, FOLDER_ID)
                 master_ws = gs_client.open_by_key(master_id).sheet1
                 master_records = master_ws.get_all_records()
                 match_idx = next(
