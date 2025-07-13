@@ -10,12 +10,6 @@ import pytz
 import re
 import dropbox
 
-st.set_page_config(
-    page_title="MPU Portal | JP Mascaro & Sons",
-    page_icon="https://raw.githubusercontent.com/marko-londo/coa_testing/refs/heads/main/favicon.ico",
-    layout="centered",  # or "wide"
-    initial_sidebar_state="collapsed",
-)
 
 
 # ----------- 1. AUTH -----------
@@ -45,6 +39,12 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapi
 credentials_gs = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
 gs_client = gspread.authorize(credentials_gs)
 
+st.set_page_config(
+    page_title="MPU Portal | JP Mascaro & Sons",
+    page_icon="https://raw.githubusercontent.com/marko-londo/coa_testing/refs/heads/main/favicon.ico",
+    layout="centered",  # or "wide"
+    initial_sidebar_state="collapsed",
+    )
 
 
 def user_login(authenticator, credentials):
@@ -74,9 +74,9 @@ def updates():
 
     st.markdown(
     """
-    <h1 style='color:#6CA0DC; margin-bottom:0;'>MPU Portal</h1>
+    <h1 style='color:#6CA0DC; margin-bottom:0;'>Missed Pickup Portal</h1>
     <div style='color:#FF8C8C; font-size:1.1em; font-style:italic; margin-bottom:12px;'>
-        City of Allentown & JP Mascaro
+        City of Allentown | JP Mascaro & Sons
     </div>
     <hr style='border:1px solid #ececec; margin-top:0;'>
     """,
