@@ -33,6 +33,7 @@ dbx = dropbox.Dropbox(
 SERVICE_ACCOUNT_INFO = st.secrets["google_service_account"]
 FOLDER_ID = '18f3aW-ZI5-tNKBCfHwToQ7MXQ3DS1MFj'
 ADDRESS_LIST_SHEET_URL = "https://docs.google.com/spreadsheets/d/1JJeufDkoQ6p_LMe5F-Nrf_t0r_dHrAHu8P8WXi96V9A/edit#gid=0"
+TEMPLATE_ID = "Do not remove this yet"
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 credentials_gs = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
@@ -181,7 +182,6 @@ def ensure_gsheet_exists(drive, folder_id, title):
     if files:
         return files[0]['id']
     else:
-        # Sheet does NOT exist—show error, do NOT copy template.
         st.error(
             f"Sheet '{title}' does not exist in the specified folder.\n"
             "Please contact your admin to create this week's log sheet."
@@ -189,7 +189,7 @@ def ensure_gsheet_exists(drive, folder_id, title):
         st.stop()
 
     
-def get_master_log_id(drive, client, folder_id, template_id):
+def get_master_log_id(drive, folder_id):
     results = drive.files().list(
         q=f"'{folder_id}' in parents and name = 'Master Misses Log' and mimeType = 'application/vnd.google-apps.spreadsheet'",
         fields="files(id, name)"
@@ -197,11 +197,12 @@ def get_master_log_id(drive, client, folder_id, template_id):
     files = results.get('files', [])
     if files:
         return files[0]['id']
-    copied = drive.files().copy(
-        fileId=template_id,
-        body={'name': 'Master Misses Log', 'parents': [folder_id]}
-    ).execute()
-    return copied['id']
+    else:
+        st.error(
+            "The 'Master Misses Log' sheet does not exist in the specified folder.\n"
+            "Please contact your admin to create the log sheet."
+        )
+        st.stop()
 
 def colnum_string(n):
     string = ""
@@ -239,7 +240,7 @@ main_mode = st.sidebar.radio(
 today = datetime.date.today()
 drive = build('drive', 'v3', credentials=credentials_gs)
 sheet_title = get_sheet_title(today)
-weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, TEMPLATE_ID, sheet_title)
+weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
 weekly_ss = gs_client.open_by_key(weekly_id)
 today_tab = get_today_tab_name(today)
 
@@ -343,7 +344,7 @@ if main_mode == "Submit a Missed Stop (City Side)":
 
     if st.button("Submit Missed Stop"):
         # --- Check for past misses in Master Log ---
-        master_id = get_master_log_id(drive, gs_client, FOLDER_ID, TEMPLATE_ID)
+        master_id = get_master_log_id(drive, gs_client, FOLDER_ID)
         master_ws = gs_client.open_by_key(master_id).sheet1
         master_records = master_ws.get_all_records()
     
@@ -383,7 +384,7 @@ else:
     today = datetime.date.today()
     sheet_title = get_sheet_title(today)
     drive = build('drive', 'v3', credentials=credentials_gs)
-    weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, TEMPLATE_ID, sheet_title)
+    weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
     weekly_ss = gs_client.open_by_key(weekly_id)
     today_tab = get_today_tab_name(today)
 
@@ -431,7 +432,7 @@ else:
                 indices = [c["row_idx"] for c in chosen]
                 update_rows(ws, indices, {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
 
-                master_id = get_master_log_id(drive, gs_client, FOLDER_ID, TEMPLATE_ID)
+                master_id = get_master_log_id(drive, gs_client, FOLDER_ID)
                 master_ws = gs_client.open_by_key(master_id).sheet1
                 master_records = master_ws.get_all_records()
                 for c in chosen:
@@ -538,7 +539,7 @@ else:
 
                 update_rows(ws, [chosen["row_idx"]], updates)
 
-                master_id = get_master_log_id(drive, gs_client, FOLDER_ID, TEMPLATE_ID)
+                master_id = get_master_log_id(drive, gs_client, FOLDER_ID)
                 master_ws = gs_client.open_by_key(master_id).sheet1
                 master_records = master_ws.get_all_records()
                 match_idx = next(
