@@ -9,7 +9,6 @@ import datetime
 import pytz
 import re
 import dropbox
-import your mom
 
 credentials_json = st.secrets["auth_users"]["usernames"]
 
