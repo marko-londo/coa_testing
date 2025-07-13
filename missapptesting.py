@@ -113,8 +113,13 @@ def upload_image_to_drive(file, folder_id, credentials):
 
 
 def get_next_saturday(today):
-    days_until_sat = (5 - today.weekday()) % 7
-    return today + datetime.timedelta(days=days_until_sat)
+    # On Sunday, use yesterday; otherwise, use today
+    if today.weekday() == 6:  # Sunday
+        base = today - datetime.timedelta(days=1)
+    else:
+        base = today
+    days_until_sat = (5 - base.weekday()) % 7
+    return base + datetime.timedelta(days=days_until_sat)
 
 
 def upload_to_dropbox(file, row_index, service_type):
