@@ -74,6 +74,24 @@ def updates():
         - Uploaded images are now automatically renamed based on relevant data (row, date, service type, etc.) for easier identification and organization.
     """
 
+    st.markdown("""
+        <style>
+        h1 {
+            font-family: 'Poppins', sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 3em !important;
+            letter-spacing: 1.5px !important;
+            /* Drop shadow for depth, outline for clarity */
+            text-shadow:
+                -1px -1px 0 #181b20,
+                 1px -1px 0 #181b20,
+                -1px  1px 0 #181b20,
+                 1px  1px 0 #181b20,
+                 0  3px 12px #6CA0DC55;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+    
     st.markdown(
         """
         <h1 style='color:#6CA0DC; margin-bottom:0;'>Missed Pickup Portal</h1>
