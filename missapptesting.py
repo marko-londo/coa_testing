@@ -56,7 +56,7 @@ def user_login(authenticator, credentials):
         st.error("Incorrect username or password. Please try again.")
         st.stop()
     elif authentication_status is None:
-        st.warning("Please enter your username and password.")
+        st.error("Please enter your username and password.")
         st.stop()
 
     user_obj = credentials["usernames"].get(username, {})
@@ -270,12 +270,17 @@ def help_page(name, user_role):
     st.markdown("---")
 
     st.write("#### Rate your overall experience:")
-    feedback = st.feedback("thumbs", key="overall_exp")
 
     FEEDBACK_SHEET_ID = "1fUrJymiIfC5GS_ofz9x4czUG6e3b8W63mMwLUyxHvFM"
     FEEDBACK_SHEET_NAME = "Feedback"
 
-    if feedback is not None:
+    # Prevent duplicate quick feedback per session
+    if "quick_feedback_logged" not in st.session_state:
+        st.session_state.quick_feedback_logged = False
+
+    feedback = st.feedback("thumbs", key="overall_exp")
+
+    if feedback is not None and not st.session_state.quick_feedback_logged:
         # Map thumbs to text
         rating_map = {0: "Thumbs Down", 1: "Thumbs Up"}
         rating_text = rating_map.get(feedback, str(feedback))
@@ -291,12 +296,13 @@ def help_page(name, user_role):
         try:
             feedback_ws = gs_client.open_by_key(FEEDBACK_SHEET_ID).worksheet(FEEDBACK_SHEET_NAME)
             feedback_ws.append_row(row)
+            st.session_state.quick_feedback_logged = True
             if feedback == 1:
-                st.info("Thanks for the thumbs up!")
+                st.info("Thanks for the thumbs up! 👍")
             else:
                 st.info("Sorry to hear that. For more detailed feedback or to report an issue, please use the button below.")
         except Exception as e:
-            st.warning(f"Failed to write to feedback sheet: {e}")
+            st.error(f"Failed to write to feedback sheet: {e}")
 
     st.markdown("---")
 
@@ -318,7 +324,7 @@ def help_page(name, user_role):
                 feedback_ws.append_row(row)
                 st.info("Thank you for your feedback! It has been recorded.")
             except Exception as e:
-                st.warning(f"Failed to write to feedback sheet: {e}")
+                st.error(f"Failed to write to feedback sheet: {e}")
             st.rerun()
 
     if st.button("Submit Feedback / Report Bug / Request Feature"):
@@ -412,14 +418,14 @@ def city_ops():
     if not called_in_time.strip():
         missing_fields.append("Time Called In")
     elif not time_format_valid:
-        st.warning("⏰ Enter time as HH:MM in 12-hour format (e.g., 9:30 or 10:45)")
+        st.error("⏰ Enter time as HH:MM in 12-hour format (e.g., 9:30 or 10:45)")
         missing_fields.append("Time Called In (invalid format)")
     
     if placement_exception == "YES" and not pe_address.strip():
         missing_fields.append("PE Address")
     
     if missing_fields:
-        st.warning(f"🚫 Please complete the following required fields: {', '.join(missing_fields)}")
+        st.error(f"🚫 Please complete the following required fields: {', '.join(missing_fields)}")
         st.stop()
 
     if st.button("Submit Missed Stop"):
@@ -571,7 +577,7 @@ def jpm_ops():
 
             valid_ci = bool(re.match(r"^([1-9]|1[0-2]):[0-5][0-9]$", driver_checkin.strip()))
             if not valid_ci and driver_checkin:
-                st.warning("⏰ Enter check-in time in 12-hour format, e.g., 1:30 or 09:45")
+                st.error("⏰ Enter check-in time in 12-hour format, e.g., 1:30 or 09:45")
 
             if valid_ci:
                 parts = driver_checkin.strip().split(":")
