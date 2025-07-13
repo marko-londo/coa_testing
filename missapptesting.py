@@ -11,7 +11,7 @@ import re
 import dropbox
 
 st.set_page_config(
-    page_title="Missed Pickup Portal | JP Mascaro & Sons",
+    page_title="MPU Portal | JP Mascaro & Sons",
     page_icon="https://raw.githubusercontent.com/marko-londo/coa_testing/refs/heads/main/favicon.ico",
     layout="centered",  # or "wide"
     initial_sidebar_state="collapsed",
@@ -72,7 +72,14 @@ def updates():
         - Uploaded images are now automatically renamed based on relevant data (row, date, service type, etc.) for easier identification and organization.
     """
 
-    st.title("Missed Pickup Portal")
+    st.markdown(
+    """
+    <h1 style='color:#305080;margin-bottom:0;'>MPU Portal</h1>
+    <div style='color:gray;font-size:1.1em;'>City of Allentown & JP Mascaro</div>
+    <hr>
+    """,
+    unsafe_allow_html=True
+    )
     st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
 
     cl_col, doc_col = st.columns([3,1])
