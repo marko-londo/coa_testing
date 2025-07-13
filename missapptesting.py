@@ -59,7 +59,7 @@ def user_login(authenticator, credentials):
 
     user_obj = credentials["usernames"].get(username, {})
     user_role = user_obj.get("role", "city")
-    st.success(f"Welcome, {name}!")
+    st.info(f"Welcome, {name}!")
     authenticator.logout("Logout", "sidebar")  # Or just "Logout"
     return name, username, user_role
 
@@ -394,7 +394,7 @@ def city_ops():
         ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
         master_ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
     
-        st.success("Miss submitted successfully!")
+        st.info("Miss submitted successfully!")
         st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
 
@@ -479,7 +479,7 @@ def jpm_ops():
                     )
                     if match_idx:
                         update_rows(master_ws, [match_idx], {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
-                st.success(f"Dispatched {len(indices)} missed stop(s)!")
+                st.info(f"Dispatched {len(indices)} missed stop(s)!")
                 st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
 
@@ -586,7 +586,7 @@ def jpm_ops():
                     update_rows(master_ws, [match_idx], updates)
 
                 st.session_state.reload_to_complete = True
-                st.success("Miss completed and logged!")
+                st.info("Miss completed and logged!")
                 st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
 name, username, user_role = user_login(authenticator, credentials)
