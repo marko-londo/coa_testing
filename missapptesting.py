@@ -172,7 +172,7 @@ def get_today_tab_name(today):
     tab_dates = { (monday_of_week + datetime.timedelta(days=i)): weekdays[i] for i in range(6) }
     return f"{tab_dates[today]} {today.month}/{today.day}/{str(today.year)[-2:]}"
 
-def ensure_gsheet_exists(drive, folder_id, template_id, title):
+def ensure_gsheet_exists(drive, folder_id, title):
     results = drive.files().list(
         q=f"'{folder_id}' in parents and name='{title}' and mimeType='application/vnd.google-apps.spreadsheet'",
         fields="files(id, name)"
