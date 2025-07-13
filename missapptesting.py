@@ -74,9 +74,11 @@ def updates():
 
     st.markdown(
     """
-    <h1 style='color:#305080;margin-bottom:0;'>MPU Portal</h1>
-    <div style='color:gray;font-size:1.1em;'>City of Allentown & JP Mascaro</div>
-    <hr>
+    <h1 style='color:#6CA0DC; margin-bottom:0;'>MPU Portal</h1>
+    <div style='color:#FF8C8C; font-size:1.1em; font-style:italic; margin-bottom:12px;'>
+        City of Allentown & JP Mascaro
+    </div>
+    <hr style='border:1px solid #ececec; margin-top:0;'>
     """,
     unsafe_allow_html=True
     )
