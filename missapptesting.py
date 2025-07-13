@@ -520,28 +520,26 @@ def jpm_ops(name, user_role):
             )
 
     if jpm_mode == "Dispatch Misses":
-        try:
-            ws = weekly_ss.worksheet(today_tab)
-        except gspread.exceptions.WorksheetNotFound:
-            st.info(f"No '{today_tab}' tab found in this week's log.")
-            ws = None
-
+        # Always work from Master Misses Log
+        master_id = get_master_log_id(drive, FOLDER_ID)
+        master_ws = gs_client.open_by_key(master_id).sheet1
+        master_records = master_ws.get_all_records()
+    
         open_misses = []
-        if ws:
-            records = ws.get_all_records()
-            for i, row in enumerate(records):
-                if (
-                    str(row.get("Collection Status", "")).strip().upper() in ("", "MISSED", "PENDING")
-                    and not row.get("Time Dispatched")
-                ):
-                    label = (
-                        f"{row['Address']} | {row['Zone']} | Called: {row.get('Time Called In', '')}"
-                    )
-                    open_misses.append({"row_idx": i+2, "row": row, "label": label})
-
+        for i, row in enumerate(master_records):
+            if (
+                str(row.get("Collection Status", "")).strip().upper() in ("", "MISSED", "PENDING")
+                and not row.get("Time Dispatched")
+            ):
+                label = (
+                    f"{row.get('Address','')} | {row.get('Zone','')} | Date: {row.get('Date','')} | Called: {row.get('Time Called In','')}"
+                )
+                open_misses.append({"row_idx": i+2, "row": row, "label": label})
+    
         if not open_misses:
-            st.info("🎉 No pending missed stops to dispatch today!")
-            st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
+            st.info("🎉 No pending missed stops to dispatch!")
+            # Optional: link to master sheet, or pick a week to display
+            st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{master_id}/edit")
         else:
             chosen = st.multiselect(
                 "Select missed stops to dispatch:", open_misses, format_func=lambda x: x["label"]
@@ -549,126 +547,142 @@ def jpm_ops(name, user_role):
             if chosen and st.button("Dispatch Selected Misses"):
                 now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
                 indices = [c["row_idx"] for c in chosen]
-                update_rows(ws, indices, {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
-
-                master_id = get_master_log_id(drive, FOLDER_ID)
-                master_ws = gs_client.open_by_key(master_id).sheet1
-                master_records = master_ws.get_all_records()
+                update_rows(master_ws, indices, {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
+    
+                # Also update the relevant weekly sheet/tab for each dispatched miss
                 for c in chosen:
                     r = c["row"]
-                    match_idx = next(
-                        (i+2 for i, mr in enumerate(master_records)
-                         if mr.get("Address") == r.get("Address")
-                         and mr.get("Date") == r.get("Date")
-                         and mr.get("Time Called In") == r.get("Time Called In")),
-                        None
-                    )
-                    if match_idx:
-                        update_rows(master_ws, [match_idx], {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
+                    miss_date = r.get("Date")
+                    if miss_date:
+                        try:
+                            miss_date_dt = datetime.datetime.strptime(miss_date, "%Y-%m-%d").date()
+                            sheet_title = get_sheet_title(miss_date_dt)
+                            weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
+                            weekly_ss = gs_client.open_by_key(weekly_id)
+                            tab_name = get_today_tab_name(miss_date_dt)
+                            ws = weekly_ss.worksheet(tab_name)
+                            tab_records = ws.get_all_records()
+                            for j, tr in enumerate(tab_records):
+                                if (tr.get("Address") == r.get("Address")
+                                    and tr.get("Date") == r.get("Date")
+                                    and tr.get("Time Called In") == r.get("Time Called In")):
+                                    update_rows(ws, [j+2], {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
+                                    break
+                        except Exception as e:
+                            pass  # If the weekly sheet/tab doesn't exist, just skip
                 st.info(f"Dispatched {len(indices)} missed stop(s)!")
-                st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
+                st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{master_id}/edit")
 
 
-    elif jpm_mode == "Complete a Missed Stop":
-        try:
-            ws = weekly_ss.worksheet(today_tab)
-        except gspread.exceptions.WorksheetNotFound:
-            st.info(f"No '{today_tab}' tab found in this week's log.")
-            ws = None
 
-        if "to_complete_data" not in st.session_state or st.session_state.get("reload_to_complete", False):
-            st.session_state.to_complete_data = ws.get_all_records() if ws else []
-            st.session_state.reload_to_complete = False
+elif jpm_mode == "Complete a Missed Stop":
+    # Always work from Master Misses Log
+    master_id = get_master_log_id(drive, FOLDER_ID)
+    master_ws = gs_client.open_by_key(master_id).sheet1
+    master_records = master_ws.get_all_records()
 
-        to_complete = []
-        for i, row in enumerate(st.session_state.to_complete_data):
-            if row.get("Time Dispatched") and row.get("Collection Status", "").strip().upper() == "DISPATCHED":
-                label = f"{row['Address']} | {row['Zone']} | Dispatched: {row.get('Time Dispatched')}"
-                to_complete.append({"row_idx": i+2, "row": row, "label": label})
+    # Use session state for caching/filtering if desired (optional)
+    if "to_complete_data" not in st.session_state or st.session_state.get("reload_to_complete", False):
+        st.session_state.to_complete_data = master_records
+        st.session_state.reload_to_complete = False
 
-        if not to_complete:
-            st.info("✅ No dispatched, incomplete misses for today!")
-            st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
+    to_complete = []
+    for i, row in enumerate(st.session_state.to_complete_data):
+        if row.get("Time Dispatched") and row.get("Collection Status", "").strip().upper() == "DISPATCHED":
+            label = f"{row.get('Address','')} | {row.get('Zone','')} | Date: {row.get('Date','')} | Dispatched: {row.get('Time Dispatched','')}"
+            to_complete.append({"row_idx": i+2, "row": row, "label": label})
+
+    if not to_complete:
+        st.info("✅ No dispatched, incomplete misses for today!")
+        st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{master_id}/edit")
+    else:
+        chosen = st.selectbox("Select a dispatched miss to complete:", to_complete, format_func=lambda x: x["label"])
+        sel = chosen["row"]
+
+        col1, col2 = st.columns([2, 1])
+        now = datetime.datetime.now(pytz.timezone("America/New_York"))
+        current_time_str = now.strftime("%I:%M")
+        default_ampm = "AM" if now.hour < 12 else "PM"
+        with col1:
+            driver_checkin = st.text_input("Driver Check-in Time (HH:MM)", placeholder=current_time_str)
+        with col2:
+            ampm2 = st.selectbox("AM/PM (Check-in)", ["AM", "PM"], index=0 if default_ampm == "AM" else 1)
+
+        valid_ci = bool(re.match(r"^([1-9]|1[0-2]):[0-5][0-9]$", driver_checkin.strip()))
+        if not valid_ci and driver_checkin:
+            st.error("⏰ Enter check-in time in 12-hour format, e.g., 1:30 or 09:45")
+
+        if valid_ci:
+            parts = driver_checkin.strip().split(":")
+            hour = parts[0].zfill(2)
+            minute = parts[1]
+            formatted_checkin = f"{hour}:{minute}"
+            check_in_time = f"{formatted_checkin} {ampm2}"
         else:
-            chosen = st.selectbox("Select a dispatched miss to complete:", to_complete, format_func=lambda x: x["label"])
-            sel = chosen["row"]
+            check_in_time = ""
 
-            col1, col2 = st.columns([2, 1])
-            now = datetime.datetime.now(pytz.timezone("America/New_York"))
-            current_time_str = now.strftime("%I:%M")
-            default_ampm = "AM" if now.hour < 12 else "PM"
-            with col1:
-                driver_checkin = st.text_input("Driver Check-in Time (HH:MM)", placeholder=current_time_str)
-            with col2:
-                ampm2 = st.selectbox("AM/PM (Check-in)", ["AM", "PM"], index=0 if default_ampm == "AM" else 1)
+        collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out"])
+        jpm_notes = st.text_area("JPM Notes")
+        uploaded_image = st.file_uploader("Upload Image (optional)", type=["jpg","jpeg","png","heic","webp"])
+        image_link = "N/A"
+        
+        if uploaded_image:
+            uploaded_image.seek(0)
+            st.image(uploaded_image, caption="Preview", use_container_width=True)
 
-            valid_ci = bool(re.match(r"^([1-9]|1[0-2]):[0-5][0-9]$", driver_checkin.strip()))
-            if not valid_ci and driver_checkin:
-                st.error("⏰ Enter check-in time in 12-hour format, e.g., 1:30 or 09:45")
-
-            if valid_ci:
-                parts = driver_checkin.strip().split(":")
-                hour = parts[0].zfill(2)
-                minute = parts[1]
-                formatted_checkin = f"{hour}:{minute}"
-                check_in_time = f"{formatted_checkin} {ampm2}"
-            else:
-                check_in_time = ""
-
-            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out"])
-            jpm_notes = st.text_area("JPM Notes")
-            uploaded_image = st.file_uploader("Upload Image (optional)", type=["jpg","jpeg","png","heic","webp"])
-            image_link = "N/A"
-            
+        can_complete = valid_ci and collection_status
+        
+        if st.button("Complete Missed Stop", disabled=not can_complete):
+            now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
+            check_in_time = f"{driver_checkin} {ampm2}"
+        
             if uploaded_image:
-                uploaded_image.seek(0)
-                st.image(uploaded_image, caption="Preview", use_container_width=True)
+                try:
+                    uploaded_image.seek(0)
+                    row_index = chosen["row_idx"]
+                    service_type = sel.get("Service Type", "Unknown")
+                    dropbox_url = upload_to_dropbox(uploaded_image, row_index, service_type)
+                    image_link = f'=HYPERLINK("{dropbox_url}", "Image Link")'
+                except Exception as e:
+                    st.error(f"Dropbox upload failed: {e}")
+                    image_link = "UPLOAD FAILED"
+            else:
+                image_link = "N/A"
 
-            can_complete = valid_ci and collection_status
-            
-            if st.button("Complete Missed Stop", disabled=not can_complete):
-                now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
-                check_in_time = f"{driver_checkin} {ampm2}"
-            
-                if uploaded_image:
-                    try:
-                        uploaded_image.seek(0)
-                        row_index = chosen["row_idx"]  # Chosen is your current row dict, as in your code
-                        service_type = sel.get("Service Type", "Unknown")  # sel is the row being completed
-                        dropbox_url = upload_to_dropbox(uploaded_image, row_index, service_type)
-                        image_link = f'=HYPERLINK("{dropbox_url}", "Image Link")'
-                    except Exception as e:
-                        st.error(f"Dropbox upload failed: {e}")
-                        image_link = "UPLOAD FAILED"
-                else:
-                    image_link = "N/A"
+            updates = {
+                "Driver Check-in Time": check_in_time,
+                "Collection Status": collection_status,
+                "JPM Notes": jpm_notes,
+                "Image": image_link,
+            }
 
-            
-                updates = {
-                    "Driver Check-in Time": check_in_time,
-                    "Collection Status": collection_status,
-                    "JPM Notes": jpm_notes,
-                    "Image": image_link,
-                }
+            # Update in Master Misses Log (primary)
+            update_rows(master_ws, [chosen["row_idx"]], updates)
 
-                update_rows(ws, [chosen["row_idx"]], updates)
+            # Also update in the correct weekly sheet/tab for recordkeeping
+            r = sel
+            miss_date = r.get("Date")
+            if miss_date:
+                try:
+                    miss_date_dt = datetime.datetime.strptime(miss_date, "%Y-%m-%d").date()
+                    sheet_title = get_sheet_title(miss_date_dt)
+                    weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
+                    weekly_ss = gs_client.open_by_key(weekly_id)
+                    tab_name = get_today_tab_name(miss_date_dt)
+                    ws = weekly_ss.worksheet(tab_name)
+                    tab_records = ws.get_all_records()
+                    for j, tr in enumerate(tab_records):
+                        if (tr.get("Address") == r.get("Address")
+                            and tr.get("Date") == r.get("Date")
+                            and tr.get("Time Called In") == r.get("Time Called In")):
+                            update_rows(ws, [j+2], updates)
+                            break
+                except Exception as e:
+                    pass  # skip if the weekly sheet/tab doesn't exist
 
-                master_id = get_master_log_id(drive, FOLDER_ID)
-                master_ws = gs_client.open_by_key(master_id).sheet1
-                master_records = master_ws.get_all_records()
-                match_idx = next(
-                    (i+2 for i, mr in enumerate(master_records)
-                     if mr.get("Address") == sel.get("Address") and
-                        mr.get("Date") == sel.get("Date") and
-                        mr.get("Time Called In") == sel.get("Time Called In")),
-                    None
-                )
-                if match_idx:
-                    update_rows(master_ws, [match_idx], updates)
-
-                st.session_state.reload_to_complete = True
-                st.info("Miss completed and logged!")
-                st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
+            st.session_state.reload_to_complete = True
+            st.info("Miss completed and logged!")
+            st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{master_id}/edit")
 
     else:
         help_page(name, user_role)
