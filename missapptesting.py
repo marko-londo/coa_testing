@@ -288,17 +288,12 @@ def help_page(name, user_role):
     st.markdown("---")
 
     st.write("#### Rate your overall experience:")
+    feedback = st.feedback("thumbs", key="overall_exp")
 
     FEEDBACK_SHEET_ID = "1fUrJymiIfC5GS_ofz9x4czUG6e3b8W63mMwLUyxHvFM"
     FEEDBACK_SHEET_NAME = "Feedback"
 
-    # Track the last feedback value to avoid duplicates, but allow updates
-    if "last_feedback_value" not in st.session_state:
-        st.session_state.last_feedback_value = None
-
-    feedback = st.feedback("thumbs", key="overall_exp")
-
-    if feedback is not None and feedback != st.session_state.last_feedback_value:
+    if feedback is not None:
         # Map thumbs to text
         rating_map = {0: "Thumbs Down", 1: "Thumbs Up"}
         rating_text = rating_map.get(feedback, str(feedback))
@@ -314,7 +309,6 @@ def help_page(name, user_role):
         try:
             feedback_ws = gs_client.open_by_key(FEEDBACK_SHEET_ID).worksheet(FEEDBACK_SHEET_NAME)
             feedback_ws.append_row(row)
-            st.session_state.last_feedback_value = feedback  # Update the stored value
             if feedback == 1:
                 st.success("Thanks for the thumbs up! 👍")
             else:
@@ -347,6 +341,7 @@ def help_page(name, user_role):
 
     if st.button("Submit Feedback / Report Bug / Request Feature"):
         feedback_dialog()
+
 
 
 
