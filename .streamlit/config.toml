@@ -1,0 +1,6 @@
+[theme]
+primaryColor = "#6CA0DC"      # Pastel blue (buttons, highlights)
+backgroundColor = "#ffffff"   # App main background
+secondaryBackgroundColor = "#f7f9fa"  # Sidebar/background cards
+textColor = "#202020"         # Main text
+font = "sans serif"           # Options: "sans serif", "serif", "monospace"
