@@ -65,12 +65,14 @@ def user_login(authenticator, credentials):
     return name, username, user_role
 
 def updates():
-    APP_VERSION = "v1.2"
+    APP_VERSION = "2.0"
     CHANGELOG = """
-    - **v1.2** (2025-07-12):  
-        - Fixed Dropbox temporary token issue.
-        - Fixed Image upload issue.
-        - Uploaded images are now automatically renamed based on relevant data (row, date, service type, etc.) for easier identification and organization.
+    - **v2.0** (2025-07-12):  
+        - Updated UI and General QoL improvements
+        - Added user roles: City users and JPM users now have distinct app views and permissions
+        - JPM side options ("Dispatch Misses" / "Complete a Missed Stop" / "Help") moved to sidebar for easier access and clarity
+        - Updated duplicate detection: Duplicates now check the Master Log for existing “Pending” status, not just same-day entries
+        - Submissions can now be made on a Sunday (it will add them to the following Monday’s Log)
     """
 
     st.markdown("""
