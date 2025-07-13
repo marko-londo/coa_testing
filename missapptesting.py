@@ -11,7 +11,7 @@ import re
 import dropbox
 
 st.set_page_config(
-    page_title="Missed Stops Manager | JP Mascaro & Sons",
+    page_title="CoA Misses | JP Mascaro & Sons",
     page_icon="https://raw.githubusercontent.com/marko-londo/coa_testing/refs/heads/main/favicon.ico",
     layout="centered",  # or "wide"
     initial_sidebar_state="expanded",
