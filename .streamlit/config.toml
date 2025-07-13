@@ -3,4 +3,8 @@ primaryColor = "#6CA0DC"
 backgroundColor = "#0e1117"
 secondaryBackgroundColor = "#181b20"
 textColor = "#fafafa"
-font = "sans serif"
+font = "Inter, sans-serif"
+
+[[theme.fontFaces]]
+family = "Inter"
+src = "url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrKpF1eM4.woff2')"
