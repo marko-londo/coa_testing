@@ -149,12 +149,14 @@ def upload_image_to_drive(file, folder_id, credentials):
     return f"https://drive.google.com/uc?id={file_id}"
 
 def get_next_saturday(today):
+    # If today is Sunday, treat as start of next week, so return *next* Saturday
     if today.weekday() == 6:  # Sunday
-        base = today - datetime.timedelta(days=1)
+        # Sunday: add 6 days to get to next Saturday
+        return today + datetime.timedelta(days=6)
     else:
-        base = today
-    days_until_sat = (5 - base.weekday()) % 7
-    return base + datetime.timedelta(days=days_until_sat)
+        # For Mon-Sat: get this week's Saturday
+        days_until_sat = 5 - today.weekday()
+        return today + datetime.timedelta(days=days_until_sat)
 
 def upload_to_dropbox(file, row_index, service_type):
     import dropbox
@@ -205,12 +207,20 @@ def get_monday_of_week(saturday_date):
     return saturday_date - datetime.timedelta(days=5)
 
 def get_today_tab_name(today):
-    next_saturday = get_next_saturday(today)
-    monday_of_week = next_saturday - datetime.timedelta(days=5)
-    weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    tab_dates = { (monday_of_week + datetime.timedelta(days=i)): weekdays[i] for i in range(7) }
-    day_label = tab_dates.get(today, today.strftime('%A'))
-    return f"{day_label} {today.month}/{today.day}/{str(today.year)[-2:]}"
+    # If Sunday, tab is *next* Monday of next week (for the next sheet)
+    if today.weekday() == 6:  # Sunday
+        next_monday = today + datetime.timedelta(days=1)
+        tab_date = next_monday
+        day_label = "Monday"
+    else:
+        # As before
+        next_saturday = get_next_saturday(today)
+        monday_of_week = next_saturday - datetime.timedelta(days=5)
+        weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        tab_date = monday_of_week + datetime.timedelta(days=today.weekday())
+        day_label = weekdays[today.weekday()]
+    return f"{day_label} {tab_date.month}/{tab_date.day}/{str(tab_date.year)[-2:]}"
+
 
 def ensure_gsheet_exists(drive, folder_id, title):
     results = drive.files().list(
