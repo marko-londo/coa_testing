@@ -3,8 +3,8 @@ primaryColor = "#6CA0DC"
 backgroundColor = "#0e1117"
 secondaryBackgroundColor = "#181b20"
 textColor = "#fafafa"
-font = "Roboto Mono, monospace"
+font = "Montserrat, sans-serif"
 
 [[theme.fontFaces]]
-family = "Roboto Mono"
-src = "url('https://fonts.gstatic.com/s/robotomono/v22/L0x7DF4xlVMF-BfR8bXMIjhG7Zg.woff2')"
+family = "Montserrat"
+src = "url('https://fonts.gstatic.com/s/montserrat/v25/JTUQjIg1_i6t8kCHKm459WxhzA.woff2')"
