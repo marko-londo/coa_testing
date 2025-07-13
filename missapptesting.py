@@ -343,7 +343,6 @@ def help_page(name, user_role):
         feedback_dialog()
 
 
-
 def city_ops():
     st.sidebar.subheader("City of Allentown")
     city_mode = st.sidebar.radio("Select Action:", ["Submit a Missed Pickup", "Help"])
