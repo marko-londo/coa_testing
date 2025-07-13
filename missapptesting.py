@@ -61,7 +61,7 @@ def user_login(authenticator, credentials):
 
     user_obj = credentials["usernames"].get(username, {})
     user_role = user_obj.get("role", "city")
-    st.success(f"Welcome, {name}!")
+    st.info(f"Welcome, {name}!")
     authenticator.logout("Logout", "sidebar")
     return name, username, user_role
 
@@ -292,7 +292,7 @@ def help_page(name, user_role):
             feedback_ws = gs_client.open_by_key(FEEDBACK_SHEET_ID).worksheet(FEEDBACK_SHEET_NAME)
             feedback_ws.append_row(row)
             if feedback == 1:
-                st.success("Thanks for the thumbs up! 👍")
+                st.info("Thanks for the thumbs up!")
             else:
                 st.info("Sorry to hear that. For more detailed feedback or to report an issue, please use the button below.")
         except Exception as e:
@@ -316,7 +316,7 @@ def help_page(name, user_role):
             try:
                 feedback_ws = gs_client.open_by_key(FEEDBACK_SHEET_ID).worksheet(FEEDBACK_SHEET_NAME)
                 feedback_ws.append_row(row)
-                st.success("Thank you for your feedback! It has been recorded.")
+                st.info("Thank you for your feedback! It has been recorded.")
             except Exception as e:
                 st.warning(f"Failed to write to feedback sheet: {e}")
             st.rerun()
@@ -447,7 +447,7 @@ def city_ops():
         ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
         master_ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
     
-        st.success("Miss submitted successfully!")
+        st.info("Miss submitted successfully!")
         st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
 
@@ -532,7 +532,7 @@ def jpm_ops():
                     )
                     if match_idx:
                         update_rows(master_ws, [match_idx], {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
-                st.success(f"Dispatched {len(indices)} missed stop(s)!")
+                st.info(f"Dispatched {len(indices)} missed stop(s)!")
                 st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
 
@@ -634,7 +634,7 @@ def jpm_ops():
                     update_rows(master_ws, [match_idx], updates)
 
                 st.session_state.reload_to_complete = True
-                st.success("Miss completed and logged!")
+                st.info("Miss completed and logged!")
                 st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
     else:
