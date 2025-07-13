@@ -347,7 +347,7 @@ def city_ops():
     st.sidebar.subheader("City of Allentown")
     city_mode = st.sidebar.radio("Select Action:", ["Submit a Missed Pickup", "Help"])
 
-    if city_mode == "Submit a missed Pickup":
+    if city_mode == "Submit a Missed Pickup":
         today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
     
         drive = build('drive', 'v3', credentials=credentials_gs)
