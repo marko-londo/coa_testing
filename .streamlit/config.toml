@@ -3,8 +3,8 @@ primaryColor = "#6CA0DC"
 backgroundColor = "#0e1117"
 secondaryBackgroundColor = "#181b20"
 textColor = "#fafafa"
-font = "Inter, sans-serif"
+font = "Roboto, sans-serif"
 
 [[theme.fontFaces]]
-family = "Inter"
-src = "url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrKpF1eM4.woff2')"
+family = "Roboto"
+src = "url('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxM.woff2')"
