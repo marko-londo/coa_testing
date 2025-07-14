@@ -10,6 +10,10 @@ import pytz
 import re
 import dropbox
 
+jpm_logo = "https://github.com/marko-londo/coa_testing/blob/main/logo_txt.png"
+
+coa_logo = "https://raw.githubusercontent.com/marko-londo/coa_testing/0ef57ff891efc1b7258d99368cd47b487c4284a7/Allentown_logo.svg"
+
 credentials_json = st.secrets["auth_users"]["usernames"]
 
 credentials = json.loads(credentials_json)
@@ -74,6 +78,7 @@ def updates():
         - Updated duplicate detection: Duplicates now check the Master Log for existing “Pending” status, not just same-day entries
         - Submissions can now be made on a Sunday (it will add them to the following Monday’s Log)
     """
+    st.image(coa_logo, width=160)
 
     st.markdown("""
         <style>
