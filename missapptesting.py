@@ -173,6 +173,7 @@ COLUMNS = [
 
 DAY_TABS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
+
 def upload_image_to_drive(file, folder_id, credentials):
     import io
     from googleapiclient.http import MediaIoBaseUpload
@@ -215,8 +216,7 @@ def upload_to_dropbox(file, row_index, service_type):
         app_key=app_key,
         app_secret=app_secret
     )
-
-    filename = f"{row_index}-{service_type}-{today}"
+    filename = f"{row_index}-{service_type}-{today_str}"
     
     ext = ""
     if hasattr(file, "name") and "." in file.name:
@@ -406,7 +406,14 @@ def city_ops(name, user_role):
     city_mode = st.sidebar.radio("Select Action:", ["Submit a Missed Pickup", "Help"])
 
     if city_mode == "Submit a Missed Pickup":
-  
+        today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
+    
+        drive = build('drive', 'v3', credentials=credentials_gs)
+        sheet_title = get_sheet_title(today)
+        weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
+        weekly_ss = gs_client.open_by_key(weekly_id)
+        today_tab = get_today_tab_name(today)
+        
         service_type = st.selectbox("Service Type", ["MSW", "SS", "YW"])
         zone_field = f"{service_type} Zone"
         day_field = f"{service_type} Zone"
@@ -503,7 +510,7 @@ def city_ops(name, user_role):
     
         city_notes = st.text_area("City Notes (optional)")
         submit_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
-    
+        st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
         form_data = {
             "Date": str(today), "Submitted By": name, "Time Called In": f"{called_in_time.strip()} {ampm}", "Zone": zone,
             "Time Sent to JPM": submit_time, "Address": address, "Service Type": service_type, "Route": route,
@@ -526,7 +533,7 @@ def city_ops(name, user_role):
         if missing_fields:
             st.error(f"🚫 Please complete the following required fields: {', '.join(missing_fields)}")
             st.stop()
-        st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
+        
         if st.button("Submit Missed Stop"):
     
             master_id = get_master_log_id(drive, FOLDER_ID)
@@ -559,8 +566,25 @@ def city_ops(name, user_role):
         help_page(name, user_role)
 
 def jpm_ops(name, user_role):
+    today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
+
+    drive = build('drive', 'v3', credentials=credentials_gs)
+    sheet_title = get_sheet_title(today)
+    weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
+    weekly_ss = gs_client.open_by_key(weekly_id)
+    today_tab = get_today_tab_name(today)
+
     st.sidebar.subheader("JPM Operations")
     jpm_mode = st.sidebar.radio("Select Action:", ["Dispatch Misses", "Complete a Missed Stop", "Help"])
+
+
+    today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
+
+    sheet_title = get_sheet_title(today)
+    drive = build('drive', 'v3', credentials=credentials_gs)
+    weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
+    weekly_ss = gs_client.open_by_key(weekly_id)
+    today_tab = get_today_tab_name(today)
 
     def update_rows(ws, indices, updates, columns=COLUMNS):
         last_col = colnum_string(len(columns))
@@ -594,7 +618,7 @@ def jpm_ops(name, user_role):
         if not open_misses:
             st.info("🎉 No pending missed stops to dispatch!")
             # Optional: link to master sheet, or pick a week to display
-            _button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{master_id}/edit")
+            st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{master_id}/edit")
         else:
             chosen = st.multiselect(
                 "Select missed stops to dispatch:", open_misses, format_func=lambda x: x["label"]
@@ -776,7 +800,8 @@ def jpm_ops(name, user_role):
     else:
         help_page(name, user_role)
 
-today = datetime.datetime.now(pytz.timezone("America/New_York")).date().strftime("%-m.%-d.%Y")
+today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
+today_str = today.strftime("%-m.%-d.%Y")
 drive = build('drive', 'v3', credentials=credentials_gs)
 sheet_title = get_sheet_title(today)
 weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
