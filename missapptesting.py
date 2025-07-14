@@ -9,6 +9,7 @@ import datetime
 import pytz
 import re
 import dropbox
+from googleapiclient.errors import HttpError
 
 jpm_logo = "https://github.com/marko-londo/coa_testing/blob/main/1752457645003.png?raw=true"
 
@@ -593,14 +594,25 @@ def jpm_ops(name, user_role):
     def update_rows(ws, indices, updates, columns=COLUMNS):
         last_col = colnum_string(len(columns))
         for idx in indices:
-            row_values = ws.row_values(idx)
-            row_dict = dict(zip(columns, row_values + [""]*(len(columns)-len(row_values))))
-            row_dict.update(updates)
-            ws.update(
-                f"A{idx}:{last_col}{idx}",
-                [[row_dict.get(col, "") for col in columns]],
-                value_input_option="USER_ENTERED"
-            )
+            try:
+                row_values = ws.row_values(idx)
+                row_dict = dict(zip(columns, row_values + [""]*(len(columns)-len(row_values))))
+                row_dict.update(updates)
+                ws.update(
+                    f"A{idx}:{last_col}{idx}",
+                    [[row_dict.get(col, "") for col in columns]],
+                    value_input_option="USER_ENTERED"
+                )
+            except HttpError as e:
+                if e.resp.status == 429 or "Rate Limit" in str(e):
+                    st.error(
+                        "⚠️ Too many updates at once! Google Sheets is rate-limiting you. "
+                        "Please wait a minute and try again, or select fewer items at a time."
+                    )
+                    # Optionally: break or return to prevent further updates
+                    break
+                else:
+                    st.error(f"Error updating row {idx}: {e}")
 
     if jpm_mode == "Dispatch Misses":
         # Always work from Master Misses Log
