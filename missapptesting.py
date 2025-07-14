@@ -527,7 +527,7 @@ def city_ops(name, user_role):
         if missing_fields:
             st.error(f"🚫 Please complete the following required fields: {', '.join(missing_fields)}")
             st.stop()
-    
+        st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
         if st.button("Submit Missed Stop"):
     
             master_id = get_master_log_id(drive, FOLDER_ID)
@@ -555,7 +555,7 @@ def city_ops(name, user_role):
             master_ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
         
             st.info("Miss submitted successfully!")         
-            st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
+            
     else:
         help_page(name, user_role)
 
