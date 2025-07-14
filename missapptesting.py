@@ -78,7 +78,15 @@ def updates():
         - Updated duplicate detection: Duplicates now check the Master Log for existing “Pending” status, not just same-day entries
         - Submissions can now be made on a Sunday (it will add them to the following Monday’s Log)
     """
-    st.image(jpm_logo, width=160)
+    
+    st.markdown(
+        f"""
+        <div style='display: flex; justify-content: center; align-items: center; margin-bottom: 12px;'>
+            <img src='{jpm_logo}' width='160'>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     st.markdown("""
         <style>
