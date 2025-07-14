@@ -52,6 +52,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
     )
 
+st.logo(image=coa_logo)
+
 def user_login(authenticator, credentials):
     name, authentication_status, username = authenticator.login('main')
 
