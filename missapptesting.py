@@ -555,7 +555,7 @@ def city_ops(name, user_role):
                     "lat": float(selected_row["Latitude"]),
                     "lon": float(selected_row["Longitude"])
                 }])
-                st.map(map_df, latitude="lat", longitude="lon", zoom=15, size=40)       
+                st.map(map_df, latitude="lat", longitude="lon", zoom=13, size=20)       
             
             st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
     else:
