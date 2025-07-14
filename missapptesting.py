@@ -507,7 +507,6 @@ def city_ops(name, user_role):
             master_ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
         
             st.info("Miss submitted successfully!")
-
             selected_row = next((row for row in address_df if row["Address"] == address), None)
             if selected_row and "Latitude" in selected_row and "Longitude" in selected_row:
                 import pandas as pd
@@ -515,7 +514,7 @@ def city_ops(name, user_role):
                     "lat": float(selected_row["Latitude"]),
                     "lon": float(selected_row["Longitude"])
                 }])
-                st.map(map_df, latitude="lat", longitude="lon", zoom=17, size=150)            
+                st.map(map_df, latitude="lat", longitude="lon", zoom=15, size=40)       
             
             st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
     else:
