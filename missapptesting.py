@@ -688,6 +688,9 @@ def jpm_ops(name, user_role):
             if row.get("Time Dispatched") and row.get("Collection Status", "").strip().upper() == "DISPATCHED":
                 label = f"{row.get('Address','')} | {row.get('Zone','')} | Date: {row.get('Date','')} | Dispatched: {row.get('Time Dispatched','')}"
                 to_complete.append({"row_idx": i+2, "row": row, "label": label})
+            elif row.get("Time Dispatched") and row.get("Collection Status", "").strip().upper() == "DELAYED":
+                label = f"{row.get('Address','')} | {row.get('Zone','')} | Date: {row.get('Date','')} | Dispatched: {row.get('Time Dispatched','')}"
+                to_complete.append({"row_idx": i+2, "row": row, "label": label})
     
         if not to_complete:
             st.info("✅ No dispatched, incomplete misses for today!")
@@ -709,7 +712,7 @@ def jpm_ops(name, user_role):
             )
             
             # --- The rest, using session state for sticky fields if you want ---
-            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out"], key="collection_status")
+            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out", "Rejected", "Delayed"], key="collection_status")
             jpm_notes = st.text_area("JPM Notes", key="jpm_notes")
             uploaded_image = st.file_uploader("Upload Image (optional)", type=["jpg","jpeg","png","heic","webp"])
             
