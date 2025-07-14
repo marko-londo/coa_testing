@@ -453,7 +453,6 @@ def city_ops(name, user_role):
             "Time Called In",
             value=now,
             step=datetime.timedelta(minutes=1),
-            format="hh:mm",
             key="called_in_time"
         )
         city_notes = st.text_area("City Notes (optional)")
