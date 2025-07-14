@@ -80,14 +80,12 @@ def generate_all_minutes():
     return times
 
 def updates():
-    APP_VERSION = "v2.0"
+    APP_VERSION = "v2.1"
     CHANGELOG = """
     - **v2.0** (2025-07-12):  
-        - Updated UI and General QoL improvements
-        - Added user roles: City users and JPM users now have distinct app views and permissions
-        - JPM side options ("Dispatch Misses" / "Complete a Missed Stop" / "Help") moved to sidebar for easier access and clarity
-        - Updated duplicate detection: Duplicates now check the Master Log for existing “Pending” status, not just same-day entries
-        - Submissions can now be made on a Sunday (it will add them to the following Monday’s Log)
+        - Updated Address list
+        - Changed Time input to avoid deletion bug
+        - Added session states for quicker inputs
     """
     
     st.markdown("<br>", unsafe_allow_html=True)  # One blank line
