@@ -514,7 +514,7 @@ def city_ops(name, user_role):
         city_notes = st.text_input("City Notes (optional)")
         submit_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
         form_data = {
-            "Date": str(today), "Submitted By": name, "Time Called In": f"{called_in_time.strip()} {ampm}", "Zone": zone,
+            "Date": str(today), "Submitted By": name, "Time Called In": called_in_time, "Zone": zone,
             "Time Sent to JPM": submit_time, "Address": address, "Service Type": service_type, "Route": route,
             "Whole Block": whole_block, "Placement Exception": placement_exception, "PE Address": pe_address,
             "City Notes": city_notes, "Collection Status": "Pending", "YW Zone Color": zone_color if service_type == "YW" else "N/A",  
