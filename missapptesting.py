@@ -65,7 +65,7 @@ def user_login(authenticator, credentials):
     return name, username, user_role
 
 def updates():
-    APP_VERSION = "2.0"
+    APP_VERSION = "v2.0"
     CHANGELOG = """
     - **v2.0** (2025-07-12):  
         - Updated UI and General QoL improvements
@@ -574,9 +574,15 @@ def jpm_ops(name, user_role):
                         except Exception as e:
                             pass  # If the weekly sheet/tab doesn't exist, just skip
                 st.info(f"Dispatched {len(indices)} missed stop(s)!")
-                st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
-
-
+                if chosen:
+                    last_dispatched = chosen[-1]
+                    miss_date = last_dispatched["row"].get("Date")
+                    if miss_date:
+                        miss_date_dt = datetime.datetime.strptime(miss_date, "%Y-%m-%d").date()
+                        dispatched_weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, get_sheet_title(miss_date_dt))
+                        st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{dispatched_weekly_id}/edit")
+                    else:
+                        st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
     elif jpm_mode == "Complete a Missed Stop":
         # Always work from Master Misses Log
@@ -685,7 +691,11 @@ def jpm_ops(name, user_role):
     
                 st.session_state.reload_to_complete = True
                 st.info("Miss completed and logged!")
-                st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
+                if 'miss_date_dt' in locals():
+                    completed_weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, get_sheet_title(miss_date_dt))
+                    st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{completed_weekly_id}/edit")
+                else:
+                    st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
     else:
         help_page(name, user_role)
