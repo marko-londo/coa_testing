@@ -81,9 +81,8 @@ def updates():
         - Submissions can now be made on a Sunday (it will add them to the following Monday’s Log)
     """
     
-    st.markdown("<br>", unsafe_allow_html=True)  # One blank line
-    
-    # --- Centered Logo ---
+    st.markdown("<br>", unsafe_allow_html=True) 
+
     st.markdown(
         f"""
         <div style='display: flex; justify-content: center; align-items: center; margin-bottom: 12px;'>
@@ -93,7 +92,7 @@ def updates():
         unsafe_allow_html=True
     )
     
-    # --- H1 Style ---
+
     st.markdown("""
         <style>
         h1 {
@@ -111,7 +110,7 @@ def updates():
         </style>
         """, unsafe_allow_html=True)
     
-    # --- Centered Header ---
+
     st.markdown(
         """
         <div style='text-align:center;'>
