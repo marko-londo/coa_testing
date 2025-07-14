@@ -70,6 +70,14 @@ def user_login(authenticator, credentials):
     authenticator.logout("Logout", "sidebar")
     return name, username, user_role
 
+def generate_all_minutes():
+    times = []
+    for hour in range(0, 24):
+        for minute in range(0, 60):
+            t = datetime.time(hour, minute)
+            times.append(t.strftime("%I:%M %p"))
+    return times
+
 def updates():
     APP_VERSION = "v2.0"
     CHANGELOG = """
@@ -496,16 +504,13 @@ def city_ops(name, user_role):
         whole_block = st.selectbox("Whole Block", ["NO", "YES"])
         placement_exception = st.selectbox("Placement Exception?", ["NO", "YES"])
         pe_address = st.text_input("PE Address") if placement_exception == "YES" else "N/A"
-        col1, col2 = st.columns([2, 1])
         now = datetime.datetime.now(pytz.timezone("America/New_York"))
         current_time_str = now.strftime("%I:%M")
         default_ampm = "AM" if now.hour < 12 else "PM"
-    
-        with col1:
-            called_in_time = st.text_input("Time Called In (HH:MM)", placeholder=current_time_str)
-        with col2:
-            ampm = st.selectbox("AM/PM", ["AM", "PM"], index=0 if default_ampm == "AM" else 1)
-    
+        default_index = time_options.index(now_str) if now_str in time_options else 0
+        called_in_time = st.selectbox("Time Called In", time_options, index=default_index)
+
+        parsed_time = datetime.datetime.strptime(called_in_time, "%I:%M %p").time()
         city_notes = st.text_input("City Notes (optional)")
         submit_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
         form_data = {
@@ -563,25 +568,9 @@ def city_ops(name, user_role):
         help_page(name, user_role)
 
 def jpm_ops(name, user_role):
-    today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
-
-    drive = build('drive', 'v3', credentials=credentials_gs)
-    sheet_title = get_sheet_title(today)
-    weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
-    weekly_ss = gs_client.open_by_key(weekly_id)
-    today_tab = get_today_tab_name(today)
 
     st.sidebar.subheader("JPM Operations")
     jpm_mode = st.sidebar.radio("Select Action:", ["Dispatch Misses", "Complete a Missed Stop", "Help"])
-
-
-    today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
-
-    sheet_title = get_sheet_title(today)
-    drive = build('drive', 'v3', credentials=credentials_gs)
-    weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
-    weekly_ss = gs_client.open_by_key(weekly_id)
-    today_tab = get_today_tab_name(today)
 
     def update_rows(ws, indices, updates, columns=COLUMNS):
         last_col = colnum_string(len(columns))
@@ -796,7 +785,9 @@ def jpm_ops(name, user_role):
 
     else:
         help_page(name, user_role)
-
+        
+now_str = datetime.datetime.now().strftime("%I:%M %p")
+time_options = generate_all_minutes()
 today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
 today_str = today.strftime("%-m.%-d.%Y")
 drive = build('drive', 'v3', credentials=credentials_gs)
