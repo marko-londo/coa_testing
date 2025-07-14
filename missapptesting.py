@@ -480,7 +480,14 @@ def city_ops(name, user_role):
                     if row[zone_field] == zone
                 })
             )
-
+        selected_row = next((row for row in address_df if row["Address"] == address), None)
+        if selected_row and "Latitude" in selected_row and "Longitude" in selected_row:
+            import pandas as pd
+            map_df = pd.DataFrame([{
+                "lat": float(selected_row["Latitude"]),
+                "lon": float(selected_row["Longitude"])
+            }])
+            st.map(map_df, latitude="lat", longitude="lon", zoom=15, size=35)       
         route = next((row[f"{service_type} Route"] for row in address_df if row["Address"] == address), "")
         whole_block = st.selectbox("Whole Block", ["NO", "YES"])
         placement_exception = st.selectbox("Placement Exception?", ["NO", "YES"])
