@@ -486,7 +486,7 @@ def city_ops(name, user_role):
             "Date": str(today), "Submitted By": name, "Time Called In": f"{called_in_time.strip()} {ampm}", "Zone": zone,
             "Time Sent to JPM": submit_time, "Address": address, "Service Type": service_type, "Route": route,
             "Whole Block": whole_block, "Placement Exception": placement_exception, "PE Address": pe_address,
-            "City Notes": city_notes, "Collection Status": "Pending"
+            "City Notes": city_notes, "Collection Status": "Pending", "YW Zone Color": zone_color if service_type == "YW" else "N/A",  
         }
         
         missing_fields = []
