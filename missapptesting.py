@@ -79,6 +79,8 @@ def updates():
         - Submissions can now be made on a Sunday (it will add them to the following Monday’s Log)
     """
     
+    st.markdown("<br>", unsafe_allow_html=True)  # One blank line
+    
     st.markdown(
         f"""
         <div style='display: flex; justify-content: center; align-items: center; margin-bottom: 12px;'>
@@ -87,6 +89,7 @@ def updates():
         """,
         unsafe_allow_html=True
     )
+
 
     st.markdown("""
         <style>
