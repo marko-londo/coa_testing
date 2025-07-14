@@ -487,7 +487,7 @@ def city_ops(name, user_role):
                 "lat": float(selected_row["Latitude"]),
                 "lon": float(selected_row["Longitude"])
             }])
-            st.map(map_df, latitude="lat", longitude="lon", zoom=16, size=20)       
+            st.map(map_df, latitude="lat", longitude="lon", zoom=16, size=10)       
         route = next((row[f"{service_type} Route"] for row in address_df if row["Address"] == address), "")
         whole_block = st.selectbox("Whole Block", ["NO", "YES"])
         placement_exception = st.selectbox("Placement Exception?", ["NO", "YES"])
