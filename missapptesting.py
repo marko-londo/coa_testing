@@ -633,8 +633,7 @@ def jpm_ops(name, user_role):
     
         if not open_misses:
             st.info("🎉 No pending missed stops to dispatch!")
-            # Optional: link to master sheet, or pick a week to display
-            st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{master_id}/edit")
+
         else:
             chosen = st.multiselect(
                 "Select missed stops to dispatch:", open_misses, format_func=lambda x: x["label"]
@@ -672,7 +671,6 @@ def jpm_ops(name, user_role):
                     if miss_date:
                         miss_date_dt = datetime.datetime.strptime(miss_date, "%Y-%m-%d").date()
                         dispatched_weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, get_sheet_title(miss_date_dt))
-                        st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{dispatched_weekly_id}/edit")
                     else:
                         st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
@@ -695,32 +693,24 @@ def jpm_ops(name, user_role):
     
         if not to_complete:
             st.info("✅ No dispatched, incomplete misses for today!")
-            st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{master_id}/edit")
         else:
             chosen = st.selectbox("Select a dispatched miss to complete:", to_complete, format_func=lambda x: x["label"])
             sel = chosen["row"]
     
-            col1, col2 = st.columns([2, 1])
+        
+        # --- Time Called In ---
+        if "driver_checkin" not in st.session_state:
             now = datetime.datetime.now(pytz.timezone("America/New_York"))
-            current_time_str = now.strftime("%I:%M")
-            default_ampm = "AM" if now.hour < 12 else "PM"
-            with col1:
-                driver_checkin = st.text_input("Driver Check-in Time (HH:MM)", placeholder=current_time_str)
-            with col2:
-                ampm2 = st.selectbox("AM/PM (Check-in)", ["AM", "PM"], index=0 if default_ampm == "AM" else 1)
-    
-            valid_ci = bool(re.match(r"^([1-9]|1[0-2]):[0-5][0-9]$", driver_checkin.strip()))
-            if not valid_ci and driver_checkin:
-                st.error("⏰ Enter check-in time in 12-hour format, e.g., 1:30 or 09:45")
-    
-            if valid_ci:
-                parts = driver_checkin.strip().split(":")
-                hour = parts[0].zfill(2)
-                minute = parts[1]
-                formatted_checkin = f"{hour}:{minute}"
-                check_in_time = f"{formatted_checkin} {ampm2}"
-            else:
-                check_in_time = ""
+            current_time_str = now.strftime("%I:%M %p")
+            st.session_state.called_in_time = (
+                current_time_str if current_time_str in time_options else time_options[0]
+            )
+        driver_checkin = st.selectbox(
+            "Driver Check In Time",
+            time_options,
+            index=time_options.index(st.session_state.driver_checkin),
+            key="driver_checkin"
+        )
     
             collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out"])
             jpm_notes = st.text_area("JPM Notes")
@@ -735,7 +725,7 @@ def jpm_ops(name, user_role):
             
             if st.button("Complete Missed Stop", disabled=not can_complete):
                 now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
-                check_in_time = f"{driver_checkin} {ampm2}"
+                check_in_time = driver_checkin
             
                 if uploaded_image:
                     try:
@@ -809,7 +799,18 @@ def jpm_ops(name, user_role):
                 st.info("Miss completed and logged!")
                 if 'miss_date_dt' in locals():
                     completed_weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, get_sheet_title(miss_date_dt))
-                    st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{completed_weekly_id}/edit")
+                for k in fields_to_reset:
+                    if k in st.session_state:
+                        del st.session_state[k]
+                st.rerun()  # Immediately resets the UI
+            
+            if st.button("Start Over"):
+                for k in fields_to_reset:
+                    if k in st.session_state:
+                        del st.session_state[k]
+                st.rerun()                
+                
+
                 else:
                     st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
