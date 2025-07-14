@@ -505,9 +505,8 @@ def city_ops(name, user_role):
         placement_exception = st.selectbox("Placement Exception?", ["NO", "YES"])
         pe_address = st.text_input("PE Address") if placement_exception == "YES" else "N/A"
         now = datetime.datetime.now(pytz.timezone("America/New_York"))
-        current_time_str = now.strftime("%I:%M")
-        default_ampm = "AM" if now.hour < 12 else "PM"
-        default_index = time_options.index(now_str) if now_str in time_options else 0
+        current_time_str = now.strftime("%I:%M %p")
+        default_index = time_options.index(current_time_str) if current_time_str in time_options else 0
         called_in_time = st.selectbox("Time Called In", time_options, index=default_index)
 
         parsed_time = datetime.datetime.strptime(called_in_time, "%I:%M %p").time()
