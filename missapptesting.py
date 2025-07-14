@@ -508,7 +508,6 @@ def city_ops(name, user_role):
     
         city_notes = st.text_area("City Notes (optional)")
         submit_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
-        st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
         form_data = {
             "Date": str(today), "Submitted By": name, "Time Called In": f"{called_in_time.strip()} {ampm}", "Zone": zone,
             "Time Sent to JPM": submit_time, "Address": address, "Service Type": service_type, "Route": route,
