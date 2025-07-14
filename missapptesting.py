@@ -501,16 +501,32 @@ def city_ops(name, user_role):
             }])
             st.map(map_df, latitude="lat", longitude="lon", zoom=16, size=10)       
         route = next((row[f"{service_type} Route"] for row in address_df if row["Address"] == address), "")
-        whole_block = st.selectbox("Whole Block", ["NO", "YES"])
         placement_exception = st.selectbox("Placement Exception?", ["NO", "YES"])
-        pe_address = st.text_input("PE Address") if placement_exception == "YES" else "N/A"
-        now = datetime.datetime.now(pytz.timezone("America/New_York"))
-        current_time_str = now.strftime("%I:%M %p")
-        default_index = time_options.index(current_time_str) if current_time_str in time_options else 0
-        called_in_time = st.selectbox("Time Called In", time_options, index=default_index)
-
-        parsed_time = datetime.datetime.strptime(called_in_time, "%I:%M %p").time()
-        city_notes = st.text_input("City Notes (optional)")
+        pe_address = st.text_input("PE Address") if placement_exc    # Use session state for all manual/static fields after PE Address
+        fields_to_reset = [
+            "whole_block", "called_in_time", "city_notes", 
+            "placement_exception", "pe_address"
+        ]
+        
+        # --- Whole Block ---
+        whole_block = st.selectbox("Whole Block", ["NO", "YES"], key="whole_block")
+        
+        # --- Time Called In ---
+        if "called_in_time" not in st.session_state:
+            now = datetime.datetime.now(pytz.timezone("America/New_York"))
+            current_time_str = now.strftime("%I:%M %p")
+            st.session_state.called_in_time = (
+                current_time_str if current_time_str in time_options else time_options[0]
+            )
+        called_in_time = st.selectbox(
+            "Time Called In",
+            time_options,
+            index=time_options.index(st.session_state.called_in_time),
+            key="called_in_time"
+        )
+        
+        # --- City Notes ---
+        city_notes = st.text_input("City Notes (optional)", key="city_notes")
         submit_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
         form_data = {
             "Date": str(today), "Submitted By": name, "Time Called In": called_in_time, "Zone": zone,
@@ -555,7 +571,17 @@ def city_ops(name, user_role):
             master_ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
         
             st.info("Miss submitted successfully!")         
+                for k in fields_to_reset:
+                    if k in st.session_state:
+                        del st.session_state[k]
+                st.rerun()  # Ensures UI is reset instantly
             
+            # Manual "Start Over" button for user control
+            if st.button("Start Over"):
+                for k in fields_to_reset:
+                    if k in st.session_state:
+                        del st.session_state[k]
+                st.rerun()
     else:
         help_page(name, user_role)
 
