@@ -675,7 +675,7 @@ def jpm_ops(name, user_role):
                         st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
     elif jpm_mode == "Complete a Missed Stop":
-        # Always work from Master Misses Log
+        fields_to_reset = ["driver_checkin", "collection_status", "jpm_notes", "uploaded_image"]
         master_id = get_master_log_id(drive, FOLDER_ID)
         master_ws = gs_client.open_by_key(master_id).sheet1
         master_records = master_ws.get_all_records()
