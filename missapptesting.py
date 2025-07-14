@@ -130,7 +130,7 @@ def updates():
     # --- App Version (left-aligned) ---
     st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
 
-    cl_col, doc_col = st.columns([3,1])
+    cl_col, doc_col, sht_col, fold_col = st.columns([2.5,0.5, 0.5, 0.5])
 
     with cl_col:
         with st.expander("What's New?", expanded=False):
@@ -141,6 +141,12 @@ def updates():
         DOC_LINK = "https://docs.google.com/document/d/1UkKj56Qn-25gMWheC-G2rC6YRJzeGsfxk9k2XNLpeTw"
         
         st.link_button("📄 View Full Docs", DOC_LINK)
+
+    with sht_col:
+        st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
+
+    with fold_col:
+        st.link_button("Open Folder", f"https://drive.google.com/drive/u/0/folders/1ogx3zPeIdTKp7C5EJ5jKavFv21mDmySj")
 
 COLUMNS = [
     "Date",
@@ -401,13 +407,7 @@ def city_ops(name, user_role):
 
     if city_mode == "Submit a Missed Pickup":
         today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
-    
-        drive = build('drive', 'v3', credentials=credentials_gs)
-        sheet_title = get_sheet_title(today)
-        weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
-        weekly_ss = gs_client.open_by_key(weekly_id)
-        today_tab = get_today_tab_name(today)
-        
+         
         service_type = st.selectbox("Service Type", ["MSW", "SS", "YW"])
         zone_field = f"{service_type} Zone"
         day_field = f"{service_type} Zone"
@@ -561,24 +561,11 @@ def city_ops(name, user_role):
 
 def jpm_ops(name, user_role):
     today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
-
-    drive = build('drive', 'v3', credentials=credentials_gs)
-    sheet_title = get_sheet_title(today)
-    weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
-    weekly_ss = gs_client.open_by_key(weekly_id)
-    today_tab = get_today_tab_name(today)
-
     st.sidebar.subheader("JPM Operations")
     jpm_mode = st.sidebar.radio("Select Action:", ["Dispatch Misses", "Complete a Missed Stop", "Help"])
 
 
     today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
-
-    sheet_title = get_sheet_title(today)
-    drive = build('drive', 'v3', credentials=credentials_gs)
-    weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
-    weekly_ss = gs_client.open_by_key(weekly_id)
-    today_tab = get_today_tab_name(today)
 
     def update_rows(ws, indices, updates, columns=COLUMNS):
         last_col = colnum_string(len(columns))
@@ -612,7 +599,7 @@ def jpm_ops(name, user_role):
         if not open_misses:
             st.info("🎉 No pending missed stops to dispatch!")
             # Optional: link to master sheet, or pick a week to display
-            st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{master_id}/edit")
+            _button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{master_id}/edit")
         else:
             chosen = st.multiselect(
                 "Select missed stops to dispatch:", open_misses, format_func=lambda x: x["label"]
@@ -794,7 +781,11 @@ def jpm_ops(name, user_role):
     else:
         help_page(name, user_role)
 
-
+drive = build('drive', 'v3', credentials=credentials_gs)
+sheet_title = get_sheet_title(today)
+weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
+weekly_ss = gs_client.open_by_key(weekly_id)
+today_tab = get_today_tab_name(today)
 name, username, user_role = user_login(authenticator, credentials)
 
 updates()
