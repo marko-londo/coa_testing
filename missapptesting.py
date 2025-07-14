@@ -574,7 +574,7 @@ def jpm_ops(name, user_role):
                         except Exception as e:
                             pass  # If the weekly sheet/tab doesn't exist, just skip
                 st.info(f"Dispatched {len(indices)} missed stop(s)!")
-                st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{master_id}/edit")
+                st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
 
 
@@ -685,7 +685,7 @@ def jpm_ops(name, user_role):
     
                 st.session_state.reload_to_complete = True
                 st.info("Miss completed and logged!")
-                st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{master_id}/edit")
+                st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
     else:
         help_page(name, user_role)
