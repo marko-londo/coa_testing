@@ -86,7 +86,7 @@ def updates():
     st.markdown(
         f"""
         <div style='display: flex; justify-content: center; align-items: center; margin-bottom: 12px;'>
-            <img src='{jpm_logo}' width='160'>
+            <img src='{jpm_logo}' width='320'>
         </div>
         """,
         unsafe_allow_html=True
