@@ -10,7 +10,7 @@ import pytz
 import re
 import dropbox
 
-jpm_logo = "https://raw.githubusercontent.com/marko-londo/coa_testing/main/logo_txt.png"
+jpm_logo = "https://github.com/marko-londo/coa_testing/blob/main/1752457645003.png?raw=true"
 
 coa_logo = "https://raw.githubusercontent.com/marko-londo/coa_testing/0ef57ff891efc1b7258d99368cd47b487c4284a7/Allentown_logo.svg"
 
