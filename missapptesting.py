@@ -571,17 +571,17 @@ def city_ops(name, user_role):
             master_ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
         
             st.info("Miss submitted successfully!")         
-                for k in fields_to_reset:
-                    if k in st.session_state:
-                        del st.session_state[k]
-                st.rerun()  # Ensures UI is reset instantly
-            
-            # Manual "Start Over" button for user control
-            if st.button("Start Over"):
-                for k in fields_to_reset:
-                    if k in st.session_state:
-                        del st.session_state[k]
-                st.rerun()
+            for k in fields_to_reset:
+                if k in st.session_state:
+                    del st.session_state[k]
+            st.rerun()  # Ensures UI is reset instantly
+        
+        # Manual "Start Over" button for user control
+        if st.button("Start Over"):
+            for k in fields_to_reset:
+                if k in st.session_state:
+                    del st.session_state[k]
+            st.rerun()
     else:
         help_page(name, user_role)
 
