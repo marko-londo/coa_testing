@@ -81,61 +81,61 @@ def updates():
         - Submissions can now be made on a Sunday (it will add them to the following Monday’s Log)
     """
     
-st.markdown("<br>", unsafe_allow_html=True)  # One blank line
-
-# --- Centered Logo ---
-st.markdown(
-    f"""
-    <div style='display: flex; justify-content: center; align-items: center; margin-bottom: 12px;'>
-        <img src='{jpm_logo}' width='320'>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-# --- H1 Style ---
-st.markdown("""
-    <style>
-    h1 {
-        font-family: 'Poppins', sans-serif !important;
-        font-weight: 700 !important;
-        font-size: 3em !important;
-        letter-spacing: 1.5px !important;
-        text-shadow:
-            -1px -1px 0 #181b20,
-             1px -1px 0 #181b20,
-            -1px  1px 0 #181b20,
-             1px  1px 0 #181b20,
-             0  3px 12px #6CA0DC55;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- Center ONLY the main header ---
-st.markdown(
-    """
-    <div style='text-align:center;'>
-        <h1 style='color:#6CA0DC; margin-bottom:0;'>Missed Pickup Portal</h1>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-# --- Subtitle and divider, left-aligned as in your original code ---
-st.markdown(
-    """
-    <div style='font-size:1.1em; font-style:italic; margin-bottom:12px;'>
-        <span style='color:#FF8C8C;'>City of Allentown</span>
-        <span style='color:#fff; padding:0 10px;'>|</span>
-        <span style='color:#FF8C8C;'>JP Mascaro & Sons</span>
-    </div>
-    <hr style='border:1px solid #ececec; margin-top:0;'>
-    """,
-    unsafe_allow_html=True
-)
-
-# --- Version ---
-st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)  # One blank line
+    
+    # --- Centered Logo ---
+    st.markdown(
+        f"""
+        <div style='display: flex; justify-content: center; align-items: center; margin-bottom: 12px;'>
+            <img src='{jpm_logo}' width='320'>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # --- H1 Style ---
+    st.markdown("""
+        <style>
+        h1 {
+            font-family: 'Poppins', sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 3em !important;
+            letter-spacing: 1.5px !important;
+            text-shadow:
+                -1px -1px 0 #181b20,
+                 1px -1px 0 #181b20,
+                -1px  1px 0 #181b20,
+                 1px  1px 0 #181b20,
+                 0  3px 12px #6CA0DC55;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+    
+    # --- Center ONLY the main header ---
+    st.markdown(
+        """
+        <div style='text-align:center;'>
+            <h1 style='color:#6CA0DC; margin-bottom:0;'>Missed Pickup Portal</h1>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # --- Subtitle and divider, left-aligned as in your original code ---
+    st.markdown(
+        """
+        <div style='font-size:1.1em; font-style:italic; margin-bottom:12px;'>
+            <span style='color:#FF8C8C;'>City of Allentown</span>
+            <span style='color:#fff; padding:0 10px;'>|</span>
+            <span style='color:#FF8C8C;'>JP Mascaro & Sons</span>
+        </div>
+        <hr style='border:1px solid #ececec; margin-top:0;'>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # --- Version ---
+    st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
 
 
     cl_col, doc_col = st.columns([3,1])
