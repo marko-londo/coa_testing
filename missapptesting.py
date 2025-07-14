@@ -449,30 +449,35 @@ def city_ops(name, user_role):
         current_time_str = now.strftime("%I:%M")
         default_ampm = "AM" if now.hour < 12 else "PM"
     
-        with col1:
-            called_in_time = st.text_input("Time Called In (HH:MM)", placeholder=current_time_str)
-        with col2:
-            ampm = st.selectbox("AM/PM", ["AM", "PM"], index=0 if default_ampm == "AM" else 1)
-    
+        called_in_time = st.time_input(
+            "Time Called In",
+            value=now,
+            step=datetime.timedelta(minutes=1),
+            format="hh:mm",
+            key="called_in_time"
+        )
         city_notes = st.text_area("City Notes (optional)")
         submit_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
     
         form_data = {
-            "Date": str(today), "Submitted By": name, "Time Called In": f"{called_in_time.strip()} {ampm}", "Zone": zone,
-            "Time Sent to JPM": submit_time, "Address": address, "Service Type": service_type, "Route": route,
-            "Whole Block": whole_block, "Placement Exception": placement_exception, "PE Address": pe_address,
-            "City Notes": city_notes, "Collection Status": "Pending"
+            "Date": str(today),
+            "Submitted By": name,
+            "Time Called In": called_in_time.strftime("%I:%M %p"),
+            "Zone": zone,
+            "Time Sent to JPM": submit_time,
+            "Address": address,
+            "Service Type": service_type,
+            "Route": route,
+            "Whole Block": whole_block,
+            "Placement Exception": placement_exception,
+            "PE Address": pe_address,
+            "City Notes": city_notes,
+            "Collection Status": "Pending"
         }
         
         missing_fields = []
-        
-        time_format_valid = bool(re.match(r"^([1-9]|1[0-2]):[0-5][0-9]$", called_in_time.strip()))
-        if not called_in_time.strip():
+        if called_in_time is None:
             missing_fields.append("Time Called In")
-        elif not time_format_valid:
-            st.error("⏰ Enter time as HH:MM in 12-hour format (e.g., 9:30 or 10:45)")
-            missing_fields.append("Time Called In (invalid format)")
-        
         if placement_exception == "YES" and not pe_address.strip():
             missing_fields.append("PE Address")
         
