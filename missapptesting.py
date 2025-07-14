@@ -78,7 +78,7 @@ def updates():
         - Updated duplicate detection: Duplicates now check the Master Log for existing “Pending” status, not just same-day entries
         - Submissions can now be made on a Sunday (it will add them to the following Monday’s Log)
     """
-    st.image(coa_logo, width=160)
+    st.image(jpm_logo, width=160)
 
     st.markdown("""
         <style>
