@@ -648,9 +648,33 @@ def jpm_ops(name, user_role):
                 if uploaded_image:
                     try:
                         uploaded_image.seek(0)
-                        row_index = chosen["row_idx"]
+                        # Find matching row index in the weekly tab
+                        row_index_weekly = None
+                        r = sel
+                        miss_date = r.get("Date")
+                        if miss_date:
+                            try:
+                                miss_date_dt = datetime.datetime.strptime(miss_date, "%Y-%m-%d").date()
+                                sheet_title = get_sheet_title(miss_date_dt)
+                                weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
+                                weekly_ss = gs_client.open_by_key(weekly_id)
+                                tab_name = get_today_tab_name(miss_date_dt)
+                                ws = weekly_ss.worksheet(tab_name)
+                                tab_records = ws.get_all_records()
+                                for j, tr in enumerate(tab_records):
+                                    if (tr.get("Address") == r.get("Address")
+                                        and tr.get("Date") == r.get("Date")
+                                        and tr.get("Time Called In") == r.get("Time Called In")):
+                                        row_index_weekly = j + 2  # +2 because get_all_records skips header
+                                        break
+                            except Exception as e:
+                                pass  # If not found, will fallback to master row
+                
+                        if not row_index_weekly:
+                            row_index_weekly = chosen["row_idx"]  # fallback to master row
+                
                         service_type = sel.get("Service Type", "Unknown")
-                        dropbox_url = upload_to_dropbox(uploaded_image, row_index, service_type)
+                        dropbox_url = upload_to_dropbox(uploaded_image, row_index_weekly, service_type)
                         image_link = f'=HYPERLINK("{dropbox_url}", "Image Link")'
                     except Exception as e:
                         st.error(f"Dropbox upload failed: {e}")
