@@ -132,11 +132,12 @@ def updates():
 
     with st.expander("What's New?", expanded=False):
             st.markdown(CHANGELOG)
+        
     doc_col, sht_col, fold_col = st.columns(3)
+    
     with doc_col:
             
         DOC_LINK = "https://docs.google.com/document/d/1UkKj56Qn-25gMWheC-G2rC6YRJzeGsfxk9k2XNLpeTw"
-        
         st.link_button("📄 View Full Docs", DOC_LINK)
 
     with sht_col:
