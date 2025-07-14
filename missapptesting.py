@@ -522,13 +522,6 @@ def city_ops(name, user_role):
         
         missing_fields = []
         
-        time_format_valid = bool(re.match(r"^([1-9]|1[0-2]):[0-5][0-9]$", called_in_time.strip()))
-        if not called_in_time.strip():
-            missing_fields.append("Time Called In")
-        elif not time_format_valid:
-            st.error("⏰ Enter time as HH:MM in 12-hour format (e.g., 9:30 or 10:45)")
-            missing_fields.append("Time Called In (invalid format)")
-        
         if placement_exception == "YES" and not pe_address.strip():
             missing_fields.append("PE Address")
         
