@@ -809,10 +809,6 @@ def jpm_ops(name, user_role):
                     if k in st.session_state:
                         del st.session_state[k]
                 st.rerun()                
-                
-
-                else:
-                    st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
 
     else:
         help_page(name, user_role)
