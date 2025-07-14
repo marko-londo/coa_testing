@@ -506,7 +506,7 @@ def city_ops(name, user_role):
         with col2:
             ampm = st.selectbox("AM/PM", ["AM", "PM"], index=0 if default_ampm == "AM" else 1)
     
-        city_notes = st.text_area("City Notes (optional)")
+        city_notes = st.text_input("City Notes (optional)")
         submit_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
         form_data = {
             "Date": str(today), "Submitted By": name, "Time Called In": f"{called_in_time.strip()} {ampm}", "Zone": zone,
