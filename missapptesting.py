@@ -487,7 +487,7 @@ def city_ops(name, user_role):
                 "lat": float(selected_row["Latitude"]),
                 "lon": float(selected_row["Longitude"])
             }])
-            st.map(map_df, latitude="lat", longitude="lon", zoom=15, size=35)       
+            st.map(map_df, latitude="lat", longitude="lon", zoom=15, size=25)       
         route = next((row[f"{service_type} Route"] for row in address_df if row["Address"] == address), "")
         whole_block = st.selectbox("Whole Block", ["NO", "YES"])
         placement_exception = st.selectbox("Placement Exception?", ["NO", "YES"])
@@ -554,16 +554,7 @@ def city_ops(name, user_role):
             ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
             master_ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
         
-            st.info("Miss submitted successfully!")
-            selected_row = next((row for row in address_df if row["Address"] == address), None)
-            if selected_row and "Latitude" in selected_row and "Longitude" in selected_row:
-                import pandas as pd
-                map_df = pd.DataFrame([{
-                    "lat": float(selected_row["Latitude"]),
-                    "lon": float(selected_row["Longitude"])
-                }])
-                st.map(map_df, latitude="lat", longitude="lon", zoom=15, size=35)       
-            
+            st.info("Miss submitted successfully!")         
             st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
     else:
         help_page(name, user_role)
