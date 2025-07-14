@@ -502,7 +502,7 @@ def city_ops(name, user_role):
             st.map(map_df, latitude="lat", longitude="lon", zoom=16, size=10)       
         route = next((row[f"{service_type} Route"] for row in address_df if row["Address"] == address), "")
         placement_exception = st.selectbox("Placement Exception?", ["NO", "YES"])
-        pe_address = st.text_input("PE Address") if placement_exc    # Use session state for all manual/static fields after PE Address
+        pe_address = st.text_input("PE Address") if placement_exception == "YES" else "N/A"
         fields_to_reset = [
             "whole_block", "called_in_time", "city_notes", 
             "placement_exception", "pe_address"
