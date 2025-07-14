@@ -128,7 +128,7 @@ def updates():
     )
     
     # --- App Version (left-aligned) ---
-    st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True
+    st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
 
     with st.expander("What's New?", expanded=False):
             st.markdown(CHANGELOG)
