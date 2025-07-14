@@ -143,10 +143,26 @@ def updates():
         st.link_button("📄 View Full Docs", DOC_LINK)
 
 COLUMNS = [
-    "Date", "Submitted By", "Time Called In", "Zone", "Time Sent to JPM",
-    "Address", "Service Type", "Route", "Whole Block", "Placement Exception", "PE Address",
-    "City Notes", "Time Dispatched", "Driver Check-in Time", "Collection Status",
-    "JPM Notes", "Image", "Times Missed", "Last Missed"
+    "Date",
+    "Submitted By",
+    "Time Called In",
+    "Zone",
+    "YW Zone Color",
+    "Time Sent to JPM",
+    "Address",
+    "Service Type",
+    "Route",
+    "Whole Block",
+    "Placement Exception",
+    "PE Address",
+    "City Notes",
+    "Time Dispatched",
+    "Driver Check-in Time",
+    "Collection Status",
+    "JPM Notes",
+    "Image",
+    "Times Missed",
+    "Last Missed"
 ]
 
 DAY_TABS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
