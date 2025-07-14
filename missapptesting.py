@@ -128,13 +128,11 @@ def updates():
     )
     
     # --- App Version (left-aligned) ---
-    st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
-
-    doc_col, sht_col, fold_col = st.columns(3)
+    st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True
 
     with st.expander("What's New?", expanded=False):
             st.markdown(CHANGELOG)
-
+    doc_col, sht_col, fold_col = st.columns(3)
     with doc_col:
             
         DOC_LINK = "https://docs.google.com/document/d/1UkKj56Qn-25gMWheC-G2rC6YRJzeGsfxk9k2XNLpeTw"
