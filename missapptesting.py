@@ -697,31 +697,31 @@ def jpm_ops(name, user_role):
             chosen = st.selectbox("Select a dispatched miss to complete:", to_complete, format_func=lambda x: x["label"])
             sel = chosen["row"]
     
-        
-        # --- Time Called In ---
-        if "driver_checkin" not in st.session_state:
-            now = datetime.datetime.now(pytz.timezone("America/New_York"))
-            current_time_str = now.strftime("%I:%M %p")
-            st.session_state.called_in_time = (
-                current_time_str if current_time_str in time_options else time_options[0]
+            if "driver_checkin" not in st.session_state:
+                now = datetime.datetime.now(pytz.timezone("America/New_York"))
+                current_time_str = now.strftime("%I:%M %p")
+                st.session_state.driver_checkin = (
+                    current_time_str if current_time_str in time_options else time_options[0]
+                )
+            driver_checkin = st.selectbox(
+                "Driver Check In Time",
+                time_options,
+                index=time_options.index(st.session_state.driver_checkin),
+                key="driver_checkin"
             )
-        driver_checkin = st.selectbox(
-            "Driver Check In Time",
-            time_options,
-            index=time_options.index(st.session_state.driver_checkin),
-            key="driver_checkin"
-        )
-    
-            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out"])
-            jpm_notes = st.text_area("JPM Notes")
+            
+            # --- The rest, using session state for sticky fields if you want ---
+            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out"], key="collection_status")
+            jpm_notes = st.text_area("JPM Notes", key="jpm_notes")
             uploaded_image = st.file_uploader("Upload Image (optional)", type=["jpg","jpeg","png","heic","webp"])
+            
             image_link = "N/A"
             
             if uploaded_image:
                 uploaded_image.seek(0)
                 st.image(uploaded_image, caption="Preview", use_container_width=True)
-    
-            can_complete = valid_ci and collection_status
+            
+            can_complete = driver_checkin and collection_status
             
             if st.button("Complete Missed Stop", disabled=not can_complete):
                 now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
