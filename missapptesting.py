@@ -435,11 +435,36 @@ def city_ops(name, user_role):
     
         zone = st.selectbox("Zone", zones, index=zones.index(default_zone) if default_zone in zones else 0)
     
-    
-        address = st.selectbox(
-            "Address",
-            sorted({row["Address"] for row in address_df if row[zone_field] == zone})
-        )
+        zone_color = None
+        if service_type == "YW":
+            # Only addresses in this zone
+            zone_addresses = [row for row in address_df if row[zone_field] == zone]
+            # Pull unique YW Zone Colors
+            zone_colors = sorted({row["YW Zone Color"] for row in zone_addresses if row.get("YW Zone Color")})
+            if zone_colors:
+                zone_color = st.selectbox("YW Zone Color", zone_colors)
+            else:
+                zone_color = ""
+        
+        if service_type == "YW":
+            address = st.selectbox(
+                "Address",
+                sorted({
+                    row["Address"]
+                    for row in address_df
+                    if row[zone_field] == zone and row.get("YW Zone Color") == zone_color
+                })
+            )
+        else:
+            address = st.selectbox(
+                "Address",
+                sorted({
+                    row["Address"]
+                    for row in address_df
+                    if row[zone_field] == zone
+                })
+            )
+
         route = next((row[f"{service_type} Route"] for row in address_df if row["Address"] == address), "")
         whole_block = st.selectbox("Whole Block", ["NO", "YES"])
         placement_exception = st.selectbox("Placement Exception?", ["NO", "YES"])
