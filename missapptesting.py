@@ -333,13 +333,12 @@ def update_rows(ws, indices, updates, columns=COLUMNS):
             value_input_option="USER_ENTERED"
         )
 
-@st.cache_data(ttl=3600)  # cache for 1 hour (3600 seconds); adjust as needed
-def load_address_df(service_account_info, address_sheet_url):
-    creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
+@st.cache_data(ttl=3600)
+def load_address_df(_service_account_info, address_sheet_url):
+    creds = Credentials.from_service_account_info(_service_account_info, scopes=SCOPES)
     client = gspread.authorize(creds)
     ws = client.open_by_url(address_sheet_url).get_worksheet(0)
     return ws.get_all_records()
-
 address_df = load_address_df(SERVICE_ACCOUNT_INFO, ADDRESS_LIST_SHEET_URL)
 
 def help_page(name, user_role):
