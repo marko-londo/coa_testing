@@ -10,6 +10,7 @@ import pytz
 import re
 import dropbox
 from googleapiclient.errors import HttpError
+import uuid
 
 jpm_logo = "https://github.com/marko-londo/coa_testing/blob/main/1752457645003.png?raw=true"
 
