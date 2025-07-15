@@ -83,6 +83,7 @@ def updates():
     APP_VERSION = "v2.1"
     CHANGELOG = """
     - **v2.0** (2025-07-12):  
+        - Added "Rejected" and "Delayed" as Collection Status options
         - Updated Address list
         - Changed Time input to avoid deletion bug
         - Added session states for quicker inputs
