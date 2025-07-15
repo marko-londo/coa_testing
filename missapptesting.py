@@ -852,38 +852,6 @@ weekly_ss = gs_client.open_by_key(weekly_id)
 today_tab = get_today_tab_name(today)
 name, username, user_role = user_login(authenticator, credentials)
 
-def assign_missids_to_sheet(ws, columns):
-    records = ws.get_all_records()
-    missid_idx = columns.index("MissID") + 1  # 1-based index for worksheet
-    rows_to_update = []
-
-    for i, row in enumerate(records):
-        if not row.get("MissID"):
-            # Row is header+1 for 1-based Google Sheet
-            row_number = i + 2  # +2: one for 0-based index, one for header
-            new_id = str(uuid.uuid4())
-            ws.update_cell(row_number, missid_idx, new_id)
-            rows_to_update.append((row_number, new_id))
-    return rows_to_update
-
-# Use your current setup for gs_client, credentials, etc.
-
-# --- Update Master Misses Log ---
-master_id = get_master_log_id(drive, FOLDER_ID)
-master_ws = gs_client.open_by_key(master_id).sheet1
-assign_missids_to_sheet(master_ws, COLUMNS)
-
-# --- Update all Weekly Sheets ---
-for file in drive.files().list(
-    q=f"'{FOLDER_ID}' in parents and name contains 'Misses Week Ending' and mimeType = 'application/vnd.google-apps.spreadsheet'",
-    fields="files(id, name)").execute().get('files', []):
-    weekly_id = file['id']
-    weekly_ss = gs_client.open_by_key(weekly_id)
-    for tab in weekly_ss.worksheets():
-        assign_missids_to_sheet(tab, COLUMNS)
-
-
-
 updates()
 if user_role == "city":
     city_ops(name, user_role)
