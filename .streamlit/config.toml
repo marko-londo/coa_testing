@@ -8,3 +8,6 @@ font = "Poppins, sans-serif"
 [[theme.fontFaces]]
 family = "Poppins"
 url = "url('https://fonts.gstatic.com/s/poppins/v21/pxiEyp8kv8JHgFVrFJA.woff2')"
+
+[logger]
+level = "error"
