@@ -46,6 +46,8 @@ credentials_gs = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, sco
 
 gs_client = gspread.authorize(credentials_gs)
 
+st.set_option('logger.level', 'error')
+
 st.set_page_config(
     page_title="MPU Portal | JP Mascaro & Sons",
     page_icon="https://raw.githubusercontent.com/marko-londo/coa_testing/refs/heads/main/favicon.ico",
@@ -174,7 +176,8 @@ COLUMNS = [
     "JPM Notes",
     "Image",
     "Times Missed",
-    "Last Missed"
+    "Last Missed",
+    "MissID"
 ]
 
 DAY_TABS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
@@ -290,6 +293,13 @@ def ensure_gsheet_exists(drive, folder_id, title):
         )
         st.stop()
 
+def find_row_by_missid(ws, missid):
+    col_idx = len(COLUMNS)  # last column
+    missids = ws.col_values(col_idx)
+    for i, v in enumerate(missids):
+        if v == missid:
+            return i + 1  # Google Sheets rows are 1-based
+    return None
     
 def get_master_log_id(drive, folder_id):
     results = drive.files().list(
@@ -533,7 +543,7 @@ def city_ops(name, user_role):
             "Date": str(today), "Submitted By": name, "Time Called In": called_in_time, "Zone": zone,
             "Time Sent to JPM": submit_time, "Address": address, "Service Type": service_type, "Route": route,
             "Whole Block": whole_block, "Placement Exception": placement_exception, "PE Address": pe_address,
-            "City Notes": city_notes, "Collection Status": "Pending", "YW Zone Color": zone_color if service_type == "YW" else "N/A",  
+            "City Notes": city_notes, "Collection Status": "Pending", "YW Zone Color": zone_color if service_type == "YW" else "N/A", "MissID": str(uuid.uuid4())
         }
         
         missing_fields = []
@@ -640,12 +650,20 @@ def jpm_ops(name, user_role):
             )
             if chosen and st.button("Dispatch Selected Misses"):
                 now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
-                indices = [c["row_idx"] for c in chosen]
-                update_rows(master_ws, indices, {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
-    
-                # Also update the relevant weekly sheet/tab for each dispatched miss
+                
+                # --- Master Log: update by MissID ---
+                for c in chosen:
+                    missid = c["row"].get("MissID")
+                    row_idx_master = find_row_by_missid(master_ws, missid)
+                    if row_idx_master:
+                        update_rows(master_ws, [row_idx_master], {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
+                    else:
+                        st.error(f"Could not find MissID {missid} in Master Misses Log. It may have been deleted.")
+                
+                # --- Weekly log: update by MissID ---
                 for c in chosen:
                     r = c["row"]
+                    missid = r.get("MissID")
                     miss_date = r.get("Date")
                     if miss_date:
                         try:
@@ -655,16 +673,15 @@ def jpm_ops(name, user_role):
                             weekly_ss = gs_client.open_by_key(weekly_id)
                             tab_name = get_today_tab_name(miss_date_dt)
                             ws = weekly_ss.worksheet(tab_name)
-                            tab_records = ws.get_all_records()
-                            for j, tr in enumerate(tab_records):
-                                if (tr.get("Address") == r.get("Address")
-                                    and tr.get("Date") == r.get("Date")
-                                    and tr.get("Time Called In") == r.get("Time Called In")):
-                                    update_rows(ws, [j+2], {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
-                                    break
+                            row_idx_weekly = find_row_by_missid(ws, missid)
+                            if row_idx_weekly:
+                                update_rows(ws, [row_idx_weekly], {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
+                            else:
+                                st.error(f"Could not find MissID {missid} in weekly sheet '{tab_name}'.")
                         except Exception as e:
                             pass  # If the weekly sheet/tab doesn't exist, just skip
-                st.info(f"Dispatched {len(indices)} missed stop(s)!")
+            
+                st.info(f"Dispatched {len(chosen)} missed stop(s)!")
                 if chosen:
                     last_dispatched = chosen[-1]
                     miss_date = last_dispatched["row"].get("Date")
@@ -673,6 +690,7 @@ def jpm_ops(name, user_role):
                         dispatched_weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, get_sheet_title(miss_date_dt))
                     else:
                         st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
+
 
     elif jpm_mode == "Complete a Missed Stop":
         fields_to_reset = ["driver_checkin", "collection_status", "jpm_notes", "uploaded_image"]
@@ -773,11 +791,19 @@ def jpm_ops(name, user_role):
                     "JPM Notes": jpm_notes,
                     "Image": image_link,
                 }
-    
-                # Update in Master Misses Log (primary)
-                update_rows(master_ws, [chosen["row_idx"]], updates)
-    
-                # Also update in the correct weekly sheet/tab for recordkeeping
+                
+                # --- NEW: Update by MissID (for both sheets) ---
+                
+                missid = sel.get("MissID") if isinstance(sel, dict) else chosen["row"].get("MissID")
+                
+                # --- Update in Master Misses Log ---
+                row_idx_master = find_row_by_missid(master_ws, missid)
+                if row_idx_master:
+                    update_rows(master_ws, [row_idx_master], updates)
+                else:
+                    st.error("Could not find this record in the Master Misses Log. It may have been deleted.")
+                
+                # --- Also update in the correct weekly sheet/tab for recordkeeping ---
                 r = sel
                 miss_date = r.get("Date")
                 if miss_date:
@@ -788,15 +814,16 @@ def jpm_ops(name, user_role):
                         weekly_ss = gs_client.open_by_key(weekly_id)
                         tab_name = get_today_tab_name(miss_date_dt)
                         ws = weekly_ss.worksheet(tab_name)
-                        tab_records = ws.get_all_records()
-                        for j, tr in enumerate(tab_records):
-                            if (tr.get("Address") == r.get("Address")
-                                and tr.get("Date") == r.get("Date")
-                                and tr.get("Time Called In") == r.get("Time Called In")):
-                                update_rows(ws, [j+2], updates)
-                                break
+                        # NEW: find row by MissID in this worksheet!
+                        row_idx_weekly = find_row_by_missid(ws, missid)
+                        if row_idx_weekly:
+                            update_rows(ws, [row_idx_weekly], updates)
+                        else:
+                            # Optional: log/warn
+                            st.error("Could not find this record in the weekly sheet. It may have been deleted or is missing a MissID.")
                     except Exception as e:
                         pass  # skip if the weekly sheet/tab doesn't exist
+
     
                 st.session_state.reload_to_complete = True
                 st.info("Miss completed and logged!")
