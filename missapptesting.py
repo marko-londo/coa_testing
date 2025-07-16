@@ -240,6 +240,53 @@ def upload_image_to_drive(file, folder_id, credentials):
     file_id = uploaded_file.get("id")
     return f"https://drive.google.com/uc?id={file_id}"
 
+def get_finish_times_sheet_title(today):
+    next_saturday = get_next_saturday(today)
+    return f"Finish Times Week Ending {next_saturday.strftime('%Y-%m-%d')}"
+
+def ensure_finish_times_gsheet_exists(drive, folder_id, title):
+    results = drive.files().list(
+        q=f"'{folder_id}' in parents and name='{title}' and mimeType='application/vnd.google-apps.spreadsheet'",
+        fields="files(id, name)"
+    ).execute()
+    files = results.get('files', [])
+    if files:
+        return files[0]['id']
+    else:
+        # If you want to create it automatically, implement creation logic here.
+        st.error(
+            f"Finish Times sheet '{title}' does not exist in the specified folder.\n"
+            "Please contact your admin to create this week's finish log sheet."
+        )
+        st.stop()
+
+def submit_finish_time_section():
+    st.subheader("Submit Finish Time")
+
+    service_type = st.selectbox("Service Type", ["MSW", "SS", "YW"])
+    completion_status = st.selectbox("Completion Status", ["COMPLETE", "NOT COMPLETE"])
+
+    if "finish_time_submitted" not in st.session_state:
+        st.session_state.finish_time_submitted = False
+
+    if st.button("Submit Finish Time") and not st.session_state.finish_time_submitted:
+        time_submitted = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
+        today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
+        finish_sheet_title = get_finish_times_sheet_title(today)
+        drive = build('drive', 'v3', credentials=credentials_gs)
+        finish_sheet_id = ensure_finish_times_gsheet_exists(drive, FOLDER_ID, finish_sheet_title)
+        finish_times_ws = gs_client.open_by_key(finish_sheet_id).sheet1
+
+        row = [service_type, completion_status, time_submitted]
+        finish_times_ws.append_row(row, value_input_option="USER_ENTERED")
+        st.success(f"Finish time for {service_type} recorded at {time_submitted}.")
+        st.session_state.finish_time_submitted = True
+
+    if st.session_state.finish_time_submitted:
+        if st.button("Record Another Finish Time"):
+            st.session_state.finish_time_submitted = False
+
+
 def get_next_saturday(today):
     # If today is Sunday, treat as start of next week, so return *next* Saturday
     if today.weekday() == 6:  # Sunday
