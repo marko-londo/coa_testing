@@ -56,6 +56,31 @@ st.set_page_config(
 
 st.logo(image=coa_logo)
 
+def get_prior_legit_miss_count(master_records, address, this_row_date, this_row_called_in_time):
+    """
+    Returns the number of legit missed stops for this address
+    *before* this row, based on date and time called in (unique per row).
+    """
+    prior_rows = []
+    for row in master_records:
+        # Skip this row itself by comparing date + time called in
+        if (
+            row.get("Address") == address and
+            str(row.get("Date")) < str(this_row_date)
+        ):
+            if str(row.get("Collection Status", "").strip().upper()) in LEGIT_MISS_STATUSES:
+                prior_rows.append(row)
+        # If same day, check time
+        elif (
+            row.get("Address") == address and
+            str(row.get("Date")) == str(this_row_date) and
+            str(row.get("Time Called In")) < str(this_row_called_in_time)
+        ):
+            if str(row.get("Collection Status", "").strip().upper()) in LEGIT_MISS_STATUSES:
+                prior_rows.append(row)
+    return len(prior_rows)
+
+
 def user_login(authenticator, credentials):
     name, authentication_status, username = authenticator.login('main')
 
@@ -181,6 +206,17 @@ COLUMNS = [
 
 DAY_TABS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
+LEGIT_MISS_STATUSES = ("PENDING", "DISPATCHED", "NOT OUT", "PICKED UP")
+
+def calculate_times_missed(master_records, address):
+    return sum(
+        1
+        for row in master_records
+        if (
+            row.get("Address") == address and
+            str(row.get("Collection Status", "")).strip().upper() in LEGIT_MISS_STATUSES
+        )
+    )
 
 def upload_image_to_drive(file, folder_id, credentials):
     import io
@@ -568,12 +604,17 @@ def city_ops(name, user_role):
                 st.error("🚫 This address already has a pending missed stop. Please close it out before submitting a new one.")
                 st.stop()
 
+            # Only count legitimate missed stops (exclude Premature/Rejected/other non-miss statuses)
             matching_entries = [
                 row for row in master_records
-                if row.get("Address") == address
+                if (
+                    row.get("Address") == address and
+                    str(row.get("Collection Status", "")).strip().upper() in LEGIT_MISS_STATUSES
+                )
             ]
             form_data["Times Missed"] = str(len(matching_entries) + 1)
             form_data["Last Missed"] = matching_entries[-1]["Date"] if matching_entries else "First Time"
+
     
             ws = weekly_ss.worksheet(today_tab)
             ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
@@ -730,7 +771,7 @@ def jpm_ops(name, user_role):
             )
             
             # --- The rest, using session state for sticky fields if you want ---
-            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out", "Rejected", "Delayed"], key="collection_status")
+            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out", "Rejected", "Delayed", "Premature"], key="collection_status")
             jpm_notes = st.text_area("JPM Notes", key="jpm_notes")
             uploaded_image = st.file_uploader("Upload Image (optional)", type=["jpg","jpeg","png","heic","webp"])
             
@@ -790,7 +831,13 @@ def jpm_ops(name, user_role):
                     "Image": image_link,
                 }
                 
-                # --- NEW: Update by MissID (for both sheets) ---
+                if collection_status.upper() in ("PREMATURE", "REJECTED"):
+                    address = sel.get("Address")
+                    row_date = sel.get("Date")
+                    called_in_time = sel.get("Time Called In")
+                    prior_legit_misses = get_prior_legit_miss_count(master_records, address, row_date, called_in_time)
+                    updates["Times Missed"] = str(prior_legit_misses)
+                    updates["Last Missed"] = ""
                 
                 missid = sel.get("MissID") if isinstance(sel, dict) else chosen["row"].get("MissID")
                 
