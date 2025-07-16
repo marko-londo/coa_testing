@@ -831,14 +831,18 @@ def jpm_ops(name, user_role):
                     "Image": image_link,
                 }
                 
+                address = sel.get("Address")
+                row_date = sel.get("Date")
+                called_in_time = sel.get("Time Called In")
+                prior_legit_misses = get_prior_legit_miss_count(master_records, address, row_date, called_in_time)
+                
                 if collection_status.upper() in ("PREMATURE", "REJECTED"):
-                    address = sel.get("Address")
-                    row_date = sel.get("Date")
-                    called_in_time = sel.get("Time Called In")
-                    prior_legit_misses = get_prior_legit_miss_count(master_records, address, row_date, called_in_time)
                     updates["Times Missed"] = str(prior_legit_misses)
                     updates["Last Missed"] = ""
-                
+                else:
+                    updates["Times Missed"] = str(prior_legit_misses + 1)
+                    updates["Last Missed"] = row_date
+
                 missid = sel.get("MissID") if isinstance(sel, dict) else chosen["row"].get("MissID")
                 
                 # --- Update in Master Misses Log ---
