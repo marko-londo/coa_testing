@@ -648,7 +648,7 @@ def city_ops(name, user_role):
             key="called_in_time"
         )
         
-        # --- City Notes ---
+
         city_notes = st.text_input("City Notes (optional)", key="city_notes")
         submit_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
         form_data = {
