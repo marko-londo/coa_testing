@@ -592,7 +592,38 @@ def city_ops(name, user_role):
                 "lon": float(selected_row["Longitude"])
             }])
             st.map(map_df, latitude="lat", longitude="lon", zoom=16, size=10)       
-        route = next((row[f"{service_type} Route"] for row in address_df if row["Address"] == address), "")
+        if service_type == "MSW":
+            route = next(
+                (
+                    row["MSW Route"]
+                    for row in address_df
+                    if row["Address"] == address and row["MSW Zone"] == zone
+                ),
+                ""
+            )
+        elif service_type == "SS":
+            route = next(
+                (
+                    row["SS Route"]
+                    for row in address_df
+                    if row["Address"] == address and row["SS Zone"] == zone
+                ),
+                ""
+            )
+        elif service_type == "YW":
+            route = next(
+                (
+                    row["YW Route"]
+                    for row in address_df
+                    if row["Address"] == address
+                    and row["YW Zone"] == zone
+                    and row.get("YW Zone Color", "") == zone_color
+                ),
+                ""
+            )
+        else:
+            route = ""
+
         placement_exception = st.selectbox("Placement Exception?", ["NO", "YES"])
         pe_address = st.text_input("PE Address") if placement_exception == "YES" else "N/A"
         fields_to_reset = [
