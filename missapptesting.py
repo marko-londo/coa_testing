@@ -698,6 +698,20 @@ def city_ops(name, user_role):
             "Whole Block": whole_block, "Placement Exception": placement_exception, "PE Address": pe_address,
             "City Notes": city_notes, "Collection Status": "Pending", "YW Zone Color": zone_color if service_type == "YW" else "N/A", "MissID": str(uuid.uuid4())
         }
+
+        completion_sheet_title = get_completion_times_sheet_title(today)
+        try:
+            completion_sheet_id = ensure_completion_times_gsheet_exists(drive, FOLDER_ID, completion_sheet_title)
+            completion_times_ws = gs_client.open_by_key(completion_sheet_id).worksheet(get_today_tab_name(today))
+            # Find the correct row for this service type ("MSW", "SS", or "YW")
+            ct_records = completion_times_ws.get_all_records()
+            completion_row = next((row for row in ct_records if row.get("Service Type", "").strip().upper() == service_type), None)
+            if completion_row and completion_row.get("Completion Status", "").strip().upper() == "NOT COMPLETE":
+                form_data["Collection Status"] = "Premature"
+                st.warning(f"FYI: The {service_type} service has not been marked completed yet for today. "
+                        f"This stop will be flagged as **Premature**. ")
+        except Exception as e:
+            st.error(f"Could not check completion status for today: {e}")        
         
         missing_fields = []
         
@@ -890,7 +904,7 @@ def jpm_ops(name, user_role):
             )
             
             # --- The rest, using session state for sticky fields if you want ---
-            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out", "Rejected", "Delayed", "Premature"], key="collection_status")
+            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out", "Rejected", "Delayed", "Premature", "Confirmed Premature"], key="collection_status")
             jpm_notes = st.text_area("JPM Notes", key="jpm_notes")
             uploaded_image = st.file_uploader("Upload Image (optional)", type=["jpg","jpeg","png","heic","webp"])
             
@@ -955,9 +969,11 @@ def jpm_ops(name, user_role):
                 called_in_time = sel.get("Time Called In")
                 prior_legit_misses = get_prior_legit_miss_count(master_records, address, row_date, called_in_time)
                 
-                if collection_status.upper() in ("PREMATURE", "REJECTED"):
+                if collection_status.upper() in ("PREMATURE", "CONFIRMED PREMATURE", "REJECTED"):
                     updates["Times Missed"] = str(prior_legit_misses)
                     updates["Last Missed"] = ""
+
+
                 else:
                     updates["Times Missed"] = str(prior_legit_misses + 1)
                     updates["Last Missed"] = row_date
