@@ -826,10 +826,16 @@ def jpm_ops(name, user_role):
                 for c in chosen:
                     missid = c["row"].get("MissID")
                     row_idx_master = find_row_by_missid(master_ws, missid)
+                    current_status = c["row"].get("Collection Status", "").strip().upper()
+                    updates = {"Time Dispatched": now_time}
+                    if current_status != "PREMATURE":
+                        updates["Collection Status"] = "Dispatched"
+                    # Else, leave status as "Premature"
                     if row_idx_master:
-                        update_rows(master_ws, [row_idx_master], {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
+                        update_rows(master_ws, [row_idx_master], updates)
                     else:
                         st.error(f"Could not find MissID {missid} in Master Misses Log. It may have been deleted.")
+
                 
                 # --- Weekly log: update by MissID ---
                 for c in chosen:
