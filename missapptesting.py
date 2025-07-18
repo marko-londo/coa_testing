@@ -892,7 +892,7 @@ def jpm_ops(name, user_role):
             status = row.get("Collection Status", "").strip().upper()
             has_dispatched = bool(row.get("Time Dispatched"))
 
-            if has_dispatched and status in ("DISPATCHED", "DELAYED", "PREMATURE", "CONFIRMED PREMATURE"):
+            if has_dispatched and status in ("DISPATCHED", "DELAYED", "PREMATURE"):
                 label = (
                     f"{row.get('Address','')} | {row.get('Zone','')} | Date: {row.get('Date','')} | Dispatched: {row.get('Time Dispatched','')}"
                 )
@@ -923,7 +923,7 @@ def jpm_ops(name, user_role):
             )
             
             # --- The rest, using session state for sticky fields if you want ---
-            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out", "Rejected", "Delayed", "Premature", "Confirmed Premature"], key="collection_status")
+            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out", "Rejected", "Delayed", "Confirmed Premature"], key="collection_status")
             jpm_notes = st.text_area("JPM Notes", key="jpm_notes")
             uploaded_image = st.file_uploader("Upload Image (optional)", type=["jpg","jpeg","png","heic","webp"])
             
