@@ -265,10 +265,15 @@ def submit_completion_time_section():
     st.subheader("Submit Completion Time")
 
     today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
+    if today.weekday() == 6:
+        st.info("Completion times cannot be submitted on Sundays. Please return on a service day (Monday–Saturday).")
+        return
+
     completion_sheet_title = get_completion_times_sheet_title(today)
     drive = build('drive', 'v3', credentials=credentials_gs)
     completion_sheet_id = ensure_completion_times_gsheet_exists(drive, FOLDER_ID, completion_sheet_title)
-    completion_times_ws = gs_client.open_by_key(completion_sheet_id).sheet1
+    completion_times_ws = gs_client.open_by_key(completion_sheet_id).worksheet(get_today_tab_name(today))
+
 
     # Fetch all rows; assume 1 header + 3 rows (MSW, SS, YW)
     sheet_data = completion_times_ws.get_all_records()
