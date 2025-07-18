@@ -282,7 +282,7 @@ def submit_completion_time_section():
     # Find incomplete services
     incomplete_services = [
         (idx, row) for idx, row in enumerate(sheet_data, start=2)
-        if row.get("Completion Status", "").strip().upper() != "COMPLETE"
+        if row.get("Service Type") and row.get("Completion Status", "").strip().upper() != "COMPLETE"
     ]
 
     if not incomplete_services:
