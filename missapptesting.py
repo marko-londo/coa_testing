@@ -301,7 +301,7 @@ def submit_completion_time_section():
                     f"B{row_idx}:E{row_idx}",
                     [["COMPLETE", selected_time, now_time, user]]
                 )
-                st.success(f"Completion time for {service_type} recorded at {selected_time} by {user}.")
+                st.info(f"Completion time for {service_type} recorded at {selected_time} by {user}.")
                 st.rerun()
 
     # --- DIALOG DEFINITION ---
@@ -310,7 +310,7 @@ def submit_completion_time_section():
         if st.button("Yes, Clear All"):
             for i in range(2, 5):  # Rows 2,3,4 (Google Sheets 1-indexed)
                 completion_times_ws.update(f"B{i}:E{i}", [["NOT COMPLETE", "", "", ""]])
-            st.success("All submissions cleared.")
+            st.info("All submissions cleared.")
             st.rerun()
         if st.button("Cancel"):
             st.rerun()
