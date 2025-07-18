@@ -707,7 +707,7 @@ def city_ops(name, user_role):
             completion_row = next((row for row in ct_records if row.get("Service Type", "").strip().upper() == service_type), None)
             if completion_row and completion_row.get("Completion Status", "").strip().upper() == "NOT COMPLETE":
                 form_data["Collection Status"] = "Premature"
-                st.warning(f"FYI: The {service_type} service has not been marked completed yet for today. "
+                st.info(f"FYI: The {service_type} service has not been marked completed yet for today. "
                         f"This stop will be flagged as **Premature**. ")
         except Exception as e:
             st.error(f"Could not check completion status for today: {e}")        
