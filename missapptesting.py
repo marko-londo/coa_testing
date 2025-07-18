@@ -312,7 +312,7 @@ def submit_completion_time_section():
 
 
     # --- DIALOG DEFINITION ---
-    @st.dialog("WARNING: This will clear all existing submissions in the sheet. Continue?")
+    @st.dialog("WARNING: This will clear all existing submissions in the sheet for today. Continue?")
     def clear_all_dialog():
         if st.button("Yes, Clear All"):
             for i in range(2, 5):  # Rows 2,3,4 (Google Sheets 1-indexed)
