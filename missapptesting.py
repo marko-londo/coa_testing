@@ -106,11 +106,12 @@ def generate_all_minutes():
     return times
 
 def updates():
-    APP_VERSION = "v2.2"
+    APP_VERSION = "v2.3"
     CHANGELOG = """
-    - **v2.2** (2025-07-15):  
-        - Cached Address list for faster loading
-        - Added automatic creation of a unique MissID for each new missed stop, ensuring reliable row matching and updates across all sheets
+    - **v2.3** (2025-07-18):  
+        - Added “Submit Completion Times” section for JPM
+        - Stops submitted before completion time will be flagged as potentially premature
+
 
     """
 
