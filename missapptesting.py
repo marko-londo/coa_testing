@@ -889,16 +889,23 @@ def jpm_ops(name, user_role):
     
         to_complete = []
         for i, row in enumerate(st.session_state.to_complete_data):
-            if row.get("Time Dispatched") and row.get("Collection Status", "").strip().upper() == "DISPATCHED":
-                label = f"{row.get('Address','')} | {row.get('Zone','')} | Date: {row.get('Date','')} | Dispatched: {row.get('Time Dispatched','')}"
+            status = row.get("Collection Status", "").strip().upper()
+            has_dispatched = bool(row.get("Time Dispatched"))
+
+            if has_dispatched and status in ("DISPATCHED", "DELAYED", "PREMATURE", "CONFIRMED PREMATURE"):
+                label = (
+                    f"{row.get('Address','')} | {row.get('Zone','')} | Date: {row.get('Date','')} | Dispatched: {row.get('Time Dispatched','')}"
+                )
                 to_complete.append({"row_idx": i+2, "row": row, "label": label})
-            elif row.get("Time Dispatched") and row.get("Collection Status", "").strip().upper() == "DELAYED":
-                label = f"{row.get('Address','')} | {row.get('Zone','')} | Date: {row.get('Date','')} | Dispatched: {row.get('Time Dispatched','')}"
-                to_complete.append({"row_idx": i+2, "row": row, "label": label})
+
     
         if not to_complete:
             st.info("✅ No dispatched, incomplete misses for today!")
         else:
+            st.caption(
+                "Only 'Premature' stops that have been dispatched will be listed here for completion."
+            )
+
             chosen = st.selectbox("Select a dispatched miss to complete:", to_complete, format_func=lambda x: x["label"])
             sel = chosen["row"]
     
