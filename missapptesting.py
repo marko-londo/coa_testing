@@ -851,12 +851,18 @@ def jpm_ops(name, user_role):
                             tab_name = get_today_tab_name(miss_date_dt)
                             ws = weekly_ss.worksheet(tab_name)
                             row_idx_weekly = find_row_by_missid(ws, missid)
+                            current_status = r.get("Collection Status", "").strip().upper()
+                            updates = {"Time Dispatched": now_time}
+                            if current_status != "PREMATURE":
+                                updates["Collection Status"] = "Dispatched"
+                            # Else, leave status as "Premature"
                             if row_idx_weekly:
-                                update_rows(ws, [row_idx_weekly], {"Time Dispatched": now_time, "Collection Status": "Dispatched"})
+                                update_rows(ws, [row_idx_weekly], updates)
                             else:
                                 st.error(f"Could not find MissID {missid} in weekly sheet '{tab_name}'.")
                         except Exception as e:
                             pass  # If the weekly sheet/tab doesn't exist, just skip
+
             
                 st.info(f"Dispatched {len(chosen)} missed stop(s)!")
                 if chosen:
