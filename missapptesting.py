@@ -240,11 +240,11 @@ def upload_image_to_drive(file, folder_id, credentials):
     file_id = uploaded_file.get("id")
     return f"https://drive.google.com/uc?id={file_id}"
 
-def get_finish_times_sheet_title(today):
+def get_completion_times_sheet_title(today):
     next_saturday = get_next_saturday(today)
-    return f"Finish Times Week Ending {next_saturday.strftime('%Y-%m-%d')}"
+    return f"completion Times Week Ending {next_saturday.strftime('%Y-%m-%d')}"
 
-def ensure_finish_times_gsheet_exists(drive, folder_id, title):
+def ensure_completion_times_gsheet_exists(drive, folder_id, title):
     results = drive.files().list(
         q=f"'{folder_id}' in parents and name='{title}' and mimeType='application/vnd.google-apps.spreadsheet'",
         fields="files(id, name)"
@@ -255,36 +255,63 @@ def ensure_finish_times_gsheet_exists(drive, folder_id, title):
     else:
         # If you want to create it automatically, implement creation logic here.
         st.error(
-            f"Finish Times sheet '{title}' does not exist in the specified folder.\n"
-            "Please contact your admin to create this week's finish log sheet."
+            f"Completion Times sheet '{title}' does not exist in the specified folder.\n"
+            "Please contact your admin to create this week's completion log sheet."
         )
         st.stop()
 
-def submit_finish_time_section():
-    st.subheader("Submit Finish Time")
+def submit_completion_time_section():
+    st.subheader("Submit Completion Time")
+    # Load the correct sheet/worksheet for this week
+    today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
+    completion_sheet_title = get_completion_times_sheet_title(today)
+    drive = build('drive', 'v3', credentials=credentials_gs)
+    completion_sheet_id = ensure_completion_times_gsheet_exists(drive, FOLDER_ID, completion_sheet_title)
+    completion_times_ws = gs_client.open_by_key(completion_sheet_id).sheet1
 
-    service_type = st.selectbox("Service Type", ["MSW", "SS", "YW"])
-    completion_status = st.selectbox("Completion Status", ["COMPLETE", "NOT COMPLETE"])
+    # Fetch all rows; assume 1 header + 3 rows (MSW, SS, YW)
+    sheet_data = completion_times_ws.get_all_records()
+    user = name  # from user_login()
 
-    if "finish_time_submitted" not in st.session_state:
-        st.session_state.finish_time_submitted = False
+    # Find incomplete services
+    incomplete_services = [
+        (idx, row) for idx, row in enumerate(sheet_data, start=2)
+        if row.get("Completion Status", "").strip().upper() != "COMPLETE"
+    ]
 
-    if st.button("Submit Finish Time") and not st.session_state.finish_time_submitted:
-        time_submitted = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
-        today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
-        finish_sheet_title = get_finish_times_sheet_title(today)
-        drive = build('drive', 'v3', credentials=credentials_gs)
-        finish_sheet_id = ensure_finish_times_gsheet_exists(drive, FOLDER_ID, finish_sheet_title)
-        finish_times_ws = gs_client.open_by_key(finish_sheet_id).sheet1
+    if not incomplete_services:
+        st.info("All services completed for today.")
+    else:
+        for row_idx, row in incomplete_services:
+            service_type = row.get("Service Type")
+            st.write(f"**{service_type}** not yet completed.")
+            time_key = f"completion_time_{service_type}"
+            selected_time = st.selectbox(
+                f"Select completion time for {service_type}",
+                time_options,
+                key=time_key
+            )
+            if st.button(f"Submit {service_type}", key=f"submit_{service_type}"):
+                now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
+                # Update ONLY this row (columns B-E): Completion Status, Completion Time, Time Submitted, Submitted by
+                completion_times_ws.update(
+                    f"B{row_idx}:E{row_idx}",
+                    [["COMPLETE", selected_time, now_time, user]]
+                )
+                st.success(f"Completion time for {service_type} recorded at {selected_time} by {user}.")
+                st.experimental_rerun()
 
-        row = [service_type, completion_status, time_submitted]
-        finish_times_ws.append_row(row, value_input_option="USER_ENTERED")
-        st.success(f"Finish time for {service_type} recorded at {time_submitted}.")
-        st.session_state.finish_time_submitted = True
-
-    if st.session_state.finish_time_submitted:
-        if st.button("Record Another Finish Time"):
-            st.session_state.finish_time_submitted = False
+    # --- CLEAR ALL Submissions logic ---
+    if st.button("Clear All Submissions", type="primary"):
+        with st.dialog("WARNING: This will clear all existing submissions in the sheet. Continue?"):
+            if st.button("Yes, Clear All"):
+                # Set all to NOT COMPLETE, blanks for other fields
+                for i in range(2, 5):  # Rows 2,3,4 (Google Sheets 1-indexed, header is row 1)
+                    completion_times_ws.update(f"B{i}:E{i}", [["NOT COMPLETE", "", "", ""]])
+                st.success("All submissions cleared.")
+                st.experimental_rerun()
+            if st.button("Cancel"):
+                st.stop()
 
 
 def get_next_saturday(today):
@@ -716,7 +743,7 @@ def city_ops(name, user_role):
 def jpm_ops(name, user_role):
 
     st.sidebar.subheader("JPM Operations")
-    jpm_mode = st.sidebar.radio("Select Action:", ["Dispatch Misses", "Complete a Missed Stop", "Help"])
+    jpm_mode = st.sidebar.radio("Select Action:", ["Dispatch Misses", "Complete a Missed Stop", "Submit Completion Times", "Help"])
 
     def update_rows(ws, indices, updates, columns=COLUMNS):
         last_col = colnum_string(len(columns))
@@ -966,6 +993,10 @@ def jpm_ops(name, user_role):
                     if k in st.session_state:
                         del st.session_state[k]
                 st.rerun()                
+
+    elif jpm_mode == "Submit Completion Times":
+
+        submit_completion_time_section()        
 
     else:
         help_page(name, user_role)
