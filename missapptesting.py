@@ -804,7 +804,7 @@ def jpm_ops(name, user_role):
         open_misses = []
         for i, row in enumerate(master_records):
             if (
-                str(row.get("Collection Status", "")).strip().upper() in ("", "MISSED", "PENDING")
+                str(row.get("Collection Status", "")).strip().upper() in ("", "PREMATURE", "PENDING")
                 and not row.get("Time Dispatched")
             ):
                 label = (
