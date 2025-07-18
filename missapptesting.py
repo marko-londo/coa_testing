@@ -302,7 +302,7 @@ def submit_completion_time_section():
                     [["COMPLETE", selected_time, now_time, user]]
                 )
                 st.success(f"Completion time for {service_type} recorded at {selected_time} by {user}.")
-                st.experimental_rerun()
+                st.rerun()
 
     # --- DIALOG DEFINITION ---
     @st.dialog("WARNING: This will clear all existing submissions in the sheet. Continue?")
