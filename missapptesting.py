@@ -292,23 +292,24 @@ def submit_completion_time_section():
             service_type = row.get("Service Type")
             st.write(f"**{service_type}** not yet completed.")
             time_key = f"completion_time_{service_type}"
-            index = time_options.index(now_str) if now_str in time_options else 0
+            if time_key not in st.session_state:
+                st.session_state[time_key] = now_str if now_str in time_options else time_options[0]
             selected_time = st.selectbox(
                 f"Select completion time for {service_type}",
                 time_options,
-                index=index,
                 key=time_key
             )
-          
+                    
             if st.button(f"Submit {service_type}", key=f"submit_{service_type}"):
                 now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
-                # Update ONLY this row (columns B-E): Completion Status, Completion Time, Time Submitted, Submitted by
                 completion_times_ws.update(
                     f"B{row_idx}:E{row_idx}",
-                    [["COMPLETE", selected_time, now_time, user]]
+                    [["COMPLETE", st.session_state[time_key], now_time, user]]
                 )
-                st.info(f"Completion time for {service_type} recorded at {selected_time} by {user}.")
+                st.info(f"Completion time for {service_type} recorded at {st.session_state[time_key]} by {user}.")
+                del st.session_state[time_key]  # Clear it after submission
                 st.rerun()
+
 
     # --- DIALOG DEFINITION ---
     @st.dialog("WARNING: This will clear all existing submissions in the sheet. Continue?")
