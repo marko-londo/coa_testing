@@ -990,7 +990,7 @@ def jpm_ops(name, user_role):
                 
                 if collection_status.upper() in ("PREMATURE", "CONFIRMED PREMATURE", "REJECTED"):
                     updates["Times Missed"] = str(prior_legit_misses)
-                    updates["Last Missed"] = ""
+                    updates["Last Missed"] = "Never" if prior_legit_misses == 0 else <last_prior_date>
 
 
                 else:
