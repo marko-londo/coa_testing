@@ -262,7 +262,6 @@ def ensure_completion_times_gsheet_exists(drive, folder_id, title):
 
 def submit_completion_time_section():
     st.subheader("Submit Completion Time")
-    # Load the correct sheet/worksheet for this week
     today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
     completion_sheet_title = get_completion_times_sheet_title(today)
     drive = build('drive', 'v3', credentials=credentials_gs)
@@ -286,11 +285,14 @@ def submit_completion_time_section():
             service_type = row.get("Service Type")
             st.write(f"**{service_type}** not yet completed.")
             time_key = f"completion_time_{service_type}"
+            index = time_options.index(now_str) if now_str in time_options else 0
             selected_time = st.selectbox(
                 f"Select completion time for {service_type}",
                 time_options,
+                index=index,
                 key=time_key
             )
+          
             if st.button(f"Submit {service_type}", key=f"submit_{service_type}"):
                 now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
                 # Update ONLY this row (columns B-E): Completion Status, Completion Time, Time Submitted, Submitted by
@@ -301,17 +303,21 @@ def submit_completion_time_section():
                 st.success(f"Completion time for {service_type} recorded at {selected_time} by {user}.")
                 st.experimental_rerun()
 
-    # --- CLEAR ALL Submissions logic ---
+    # --- DIALOG DEFINITION ---
+    @st.dialog("WARNING: This will clear all existing submissions in the sheet. Continue?")
+    def clear_all_dialog():
+        if st.button("Yes, Clear All"):
+            for i in range(2, 5):  # Rows 2,3,4 (Google Sheets 1-indexed)
+                completion_times_ws.update(f"B{i}:E{i}", [["NOT COMPLETE", "", "", ""]])
+            st.success("All submissions cleared.")
+            st.rerun()
+        if st.button("Cancel"):
+            st.rerun()
+
+    # --- TRIGGER THE DIALOG ---
     if st.button("Clear All Submissions", type="primary"):
-        with st.dialog("WARNING: This will clear all existing submissions in the sheet. Continue?"):
-            if st.button("Yes, Clear All"):
-                # Set all to NOT COMPLETE, blanks for other fields
-                for i in range(2, 5):  # Rows 2,3,4 (Google Sheets 1-indexed, header is row 1)
-                    completion_times_ws.update(f"B{i}:E{i}", [["NOT COMPLETE", "", "", ""]])
-                st.success("All submissions cleared.")
-                st.experimental_rerun()
-            if st.button("Cancel"):
-                st.stop()
+        clear_all_dialog()
+
 
 
 def get_next_saturday(today):
