@@ -669,7 +669,6 @@ def city_ops(name, user_role):
         
         # --- Time Called In ---
         if "called_in_time" not in st.session_state:
-            now = datetime.datetime.now(pytz.timezone("America/New_York"))
             current_time_str = now.strftime("%I:%M %p")
             st.session_state.called_in_time = (
                 current_time_str if current_time_str in time_options else time_options[0]
@@ -869,7 +868,6 @@ def jpm_ops(name, user_role):
             sel = chosen["row"]
     
             if "driver_checkin" not in st.session_state:
-                now = datetime.datetime.now(pytz.timezone("America/New_York"))
                 current_time_str = now.strftime("%I:%M %p")
                 st.session_state.driver_checkin = (
                     current_time_str if current_time_str in time_options else time_options[0]
@@ -1006,7 +1004,8 @@ def jpm_ops(name, user_role):
 
     else:
         help_page(name, user_role)
-        
+
+now = datetime.datetime.now(pytz.timezone("America/New_York"))        
 now_str = datetime.datetime.now().strftime("%I:%M %p")
 time_options = generate_all_minutes()
 today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
