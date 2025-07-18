@@ -988,7 +988,7 @@ def jpm_ops(name, user_role):
                 called_in_time = sel.get("Time Called In")
                 prior_legit_misses = get_prior_legit_miss_count(master_records, address, row_date, called_in_time)
                 
-                if collection_status.upper() in ("PREMATURE", "CONFIRMED PREMATURE", "REJECTED, ONE TIME EXCEPTION"):
+                if collection_status.upper() in ("PREMATURE", "CONFIRMED PREMATURE", "REJECTED", "ONE TIME EXCEPTION"):
                     updates["Times Missed"] = str(prior_legit_misses)
                     # Find last legit prior miss date, else "Never"
                     prior_misses = [
