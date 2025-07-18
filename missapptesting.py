@@ -990,8 +990,21 @@ def jpm_ops(name, user_role):
                 
                 if collection_status.upper() in ("PREMATURE", "CONFIRMED PREMATURE", "REJECTED"):
                     updates["Times Missed"] = str(prior_legit_misses)
-                    updates["Last Missed"] = "Never" if prior_legit_misses == 0 else <last_prior_date>
-
+                    # Find last legit prior miss date, else "Never"
+                    prior_misses = [
+                        row for row in master_records
+                        if (
+                            row.get("Address") == address and
+                            str(row.get("Collection Status", "")).strip().upper() in LEGIT_MISS_STATUSES and
+                            (str(row.get("Date")) < str(row_date) or (
+                                str(row.get("Date")) == str(row_date) and str(row.get("Time Called In")) < str(called_in_time)
+                            ))
+                        )
+                    ]
+                    if prior_misses:
+                        updates["Last Missed"] = prior_misses[-1]["Date"]
+                    else:
+                        updates["Last Missed"] = "Never"
 
                 else:
                     updates["Times Missed"] = str(prior_legit_misses + 1)
