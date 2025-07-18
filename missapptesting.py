@@ -727,13 +727,14 @@ def city_ops(name, user_role):
             master_ws = gs_client.open_by_key(master_id).sheet1
             master_records = master_ws.get_all_records()
     
-            duplicate_pending = any(
+            duplicate_pending_or_premature = any(
                 row.get("Address") == address and
-                str(row.get("Collection Status", "")).strip().upper() == "PENDING"
+                str(row.get("Collection Status", "")).strip().upper() in ("PENDING", "PREMATURE")
+                and not row.get("Time Dispatched")
                 for row in master_records
             )
-            if duplicate_pending:
-                st.error("🚫 This address already has a pending missed stop. Please close it out before submitting a new one.")
+            if duplicate_pending_or_premature:
+                st.error("🚫 This address already has a pending or premature missed stop not yet dispatched. Please close or dispatch it before submitting a new one.")
                 st.stop()
 
             # Only count legitimate missed stops (exclude Premature/Rejected/other non-miss statuses)
