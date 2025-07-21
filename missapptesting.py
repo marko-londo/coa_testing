@@ -12,6 +12,7 @@ import dropbox
 from googleapiclient.errors import HttpError
 import uuid
 import pandas as pd
+import time
 
 jpm_logo = "https://github.com/marko-londo/coa_testing/blob/main/1752457645003.png?raw=true"
 
@@ -523,6 +524,7 @@ def update_rows(ws, indices, updates, columns=COLUMNS):
             [[row_dict.get(col, "") for col in columns]],
             value_input_option="USER_ENTERED"
         )
+        time.sleep(0.5)
 
 @st.cache_data(ttl=3600)
 def load_address_df(_service_account_info, address_sheet_url):
@@ -961,13 +963,8 @@ def jpm_ops(name, user_role):
                             tab_name = get_today_tab_name(miss_date_dt)
                             ws = safe_gspread_call(weekly_ss.worksheet, tab_name, error_message=f"Could not open weekly tab '{tab_name}'.")
 
-                            st.write("DEBUG: MissID to update in weekly:", missid)
-                            st.write("DEBUG: All MissIDs in this weekly tab:", ws.col_values(len(COLUMNS)))
-
                             row_idx_weekly = find_row_by_missid(ws, missid)
 
-                            st.write("DEBUG: row_idx_weekly returned:", row_idx_weekly)
-                            
                             current_status = row.get("Collection Status", "").strip().upper()
                             updates = {"Time Dispatched": now_time}
                             if current_status != "PREMATURE":
