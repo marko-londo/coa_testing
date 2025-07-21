@@ -368,9 +368,9 @@ def submit_completion_time_section():
                 now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
                 completion_times_ws.update(
                     f"B{row_idx}:E{row_idx}",
-                    [["COMPLETE", st.session_state[time_key], now_time, user]]
+                    [["COMPLETE", st.session_state[time_key], now_time, name]]
                 )
-                st.info(f"Completion time for {service_type} recorded at {st.session_state[time_key]} by {user}.")
+                st.info(f"Completion time for {service_type} recorded at {st.session_state[time_key]} by {name}.")
                 del st.session_state[time_key]  # Clear it after submission
                 st.rerun()
 
