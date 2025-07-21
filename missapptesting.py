@@ -969,7 +969,6 @@ def jpm_ops(name, user_role):
             driver_checkin = st.selectbox(
                 "Driver Check In Time",
                 time_options,
-                index=time_options.index(st.session_state.driver_checkin),
                 key="driver_checkin"
             )
             
