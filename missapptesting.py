@@ -970,7 +970,7 @@ def jpm_ops(name, user_role):
                             else:
                                 st.error(f"Could not find MissID {missid} in weekly sheet '{tab_name}'.")
                         except Exception as e:
-                            pass  # If the weekly sheet/tab doesn't exist, just skip
+                            st.error(f"Error updating weekly sheet for MissID {missid} in tab '{tab_name}': {e}")
 
                 st.info(f"Dispatched {len(selected_rows)} missed stop(s)!")
                 st.rerun()
