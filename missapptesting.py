@@ -92,6 +92,19 @@ def get_prior_legit_miss_count(master_records, address, this_row_date, this_row_
                 prior_rows.append(row)
     return len(prior_rows)
 
+def get_services_for_completion(today):
+    # today is a datetime.date
+    weekday = today.weekday()
+    # 0 = Monday, 1 = Tuesday, ..., 6 = Sunday
+    valid_services = ["MSW", "SS", "YW"]
+    # Remove YW for Mondays (since YW is never on Sunday)
+    if weekday == 0:  # Monday
+        valid_services.remove("YW")
+    # Remove SS for Thursday (since SS is never on Wednesday)
+    if weekday == 3:  # Thursday
+        valid_services.remove("SS")
+    return valid_services
+
 def is_service_type_scheduled_today(service_type, today, address_df):
     """
     Returns True if the given service_type (e.g., 'MSW', 'SS', 'YW')
@@ -296,17 +309,45 @@ def submit_completion_time_section():
     completion_sheet_id = ensure_completion_times_gsheet_exists(drive, FOLDER_ID, completion_sheet_title)
     completion_times_ws = gs_client.open_by_key(completion_sheet_id).worksheet(get_today_tab_name(today))
 
+    def auto_fill_skipped_services(completion_times_ws, today):
+        filled = []
+        weekday = today.weekday()
+        now_str = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
+        if weekday == 0:  # Monday, auto-complete YW
+            records = completion_times_ws.get_all_records()
+            for idx, row in enumerate(records, start=2):
+                if row.get("Service Type") == "YW" and row.get("Completion Status", "").strip().upper() != "COMPLETE":
+                    completion_times_ws.update(
+                        f"B{idx}:E{idx}", [["COMPLETE", "N/A", now_str, "System Auto-Fill"]]
+                    )
+                    filled.append("Yard Waste")
+        if weekday == 3:  # Thursday, auto-complete SS
+            records = completion_times_ws.get_all_records()
+            for idx, row in enumerate(records, start=2):
+                if row.get("Service Type") == "SS" and row.get("Completion Status", "").strip().upper() != "COMPLETE":
+                    completion_times_ws.update(
+                        f"B{idx}:E{idx}", [["COMPLETE", "N/A", now_str, "System Auto-Fill"]]
+                    )
+                    filled.append("Recycle")
+        return filled
+    auto_filled = auto_fill_skipped_services(completion_times_ws, today)
+    if auto_filled:
+        st.info(f"Auto-filled completion for: {', '.join(auto_filled)} (no service on previous day).")
 
     # Fetch all rows; assume 1 header + 3 rows (MSW, SS, YW)
     sheet_data = safe_gspread_call(completion_times_ws.get_all_records, error_message="Could not fetch completion times from Google Sheets.")
 
-    user = name  # from user_login()
+    valid_services = get_services_for_completion(today)
 
-    # Find incomplete services
+    # Only include services that should actually be completed today
     incomplete_services = [
         (idx, row) for idx, row in enumerate(sheet_data, start=2)
-        if row.get("Service Type") and row.get("Completion Status", "").strip().upper() != "COMPLETE"
+        if (
+            row.get("Service Type") in valid_services
+            and row.get("Completion Status", "").strip().upper() != "COMPLETE"
+        )
     ]
+
 
     if not incomplete_services:
         st.info("All services completed for today.")
