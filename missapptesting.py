@@ -11,6 +11,7 @@ import re
 import dropbox
 from googleapiclient.errors import HttpError
 import uuid
+import pandas as pd
 
 jpm_logo = "https://github.com/marko-londo/coa_testing/blob/main/1752457645003.png?raw=true"
 
@@ -892,6 +893,25 @@ def jpm_ops(name, user_role):
         master_id = get_master_log_id(drive, FOLDER_ID)
         master_ws = safe_gspread_call(gs_client.open_by_key, master_id, error_message="Could not open the Master Misses Log sheet. Please try again.").sheet1
         master_records = safe_gspread_call(master_ws.get_all_records, error_message="Could not fetch missed stops from Google Sheets. Please try again.")
+
+        undispatched_records = [
+            row for row in master_records
+            if str(row.get("Collection Status", "")).strip().upper() in ("PENDING", "PREMATURE")
+            and not row.get("Time Dispatched")
+        ]
+
+        if undispatched_records:
+            df_undispatched = pd.DataFrame(undispatched_records)
+            if 'Time Sent to JPM' in df_undispatched.columns:
+                df_undispatched['Time Sent to JPM'] = pd.to_datetime(df_undispatched['Time Sent to JPM'], errors='coerce')
+                df_undispatched = df_undispatched.sort_values(by='Time Sent to JPM', ascending=True)
+            columns_to_show = [
+                "Date", "Time Sent to JPM", "Address", "Zone", "Service Type",
+                "Submitted By", "Time Called In", "Collection Status"
+            ]
+            show_cols = [col for col in columns_to_show if col in df_undispatched.columns]
+            st.subheader("Stops Awaiting Dispatch")
+            st.dataframe(df_undispatched[show_cols], use_container_width=True)        
     
         open_misses = []
         for i, row in enumerate(master_records):
