@@ -56,6 +56,10 @@ st.set_page_config(
 
 st.logo(image=coa_logo)
 
+def get_weekday_index(day_name):
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    return days.index(day_name)
+
 def get_prior_legit_miss_count(master_records, address, this_row_date, this_row_called_in_time):
     """
     Returns the number of legit missed stops for this address
@@ -716,34 +720,33 @@ def city_ops(name, user_role):
             ct_records = completion_times_ws.get_all_records()
             completion_row = next((row for row in ct_records if row.get("Service Type", "").strip().upper() == service_type), None)
 
-            # --- NEW LOGIC FOR PREMATURE ---
+            # --- UPDATED LOGIC FOR PREMATURE ---
             # Only mark Premature if:
-            # (A) Today's zone matches the selected zone
-            # (B) This service is scheduled anywhere today
-            # (C) Completion not yet marked
+            # (A) This zone is *yesterday* relative to today
+            # (B) Completion not yet marked
+            # (C) This service type is actually scheduled today anywhere (optional safeguard)
 
-            day_name = today.strftime("%A")
-            today_zones = sorted({row.get(f"{service_type} Zone") for row in address_df if row.get(f"{service_type} Zone")})
-            today_service_zone = None
-            for z in today_zones:
-                if z and day_name.lower() in str(z).lower():
-                    today_service_zone = z
-                    break
+            days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            today_index = today.weekday()  # Monday=0 ... Sunday=6
+            zone_day_index = get_weekday_index(zone)  # e.g., "Sunday" => 6
 
-            # Make sure everything matches and service is scheduled today
+            # Only "Premature" if today is the day after the zone day
             if (
                 completion_row and
                 completion_row.get("Completion Status", "").strip().upper() == "NOT COMPLETE" and
-                zone == today_service_zone and
+                (today_index - zone_day_index) % 7 == 1 and
                 is_service_type_scheduled_today(service_type, today, address_df)
             ):
                 form_data["Collection Status"] = "Premature"
-                st.info(f"FYI: The {service_type} service has not been marked completed yet for today. "
-                        f"This stop will be flagged as **Premature**. ")
+                st.info(
+                    f"FYI: The {service_type} service has not been marked completed yet for today. "
+                    f"This stop will be flagged as **Premature**."
+                )
             else:
                 form_data["Collection Status"] = "Pending"
         except Exception as e:
             st.error(f"Could not check completion status for today: {e}")
+
 
         
         missing_fields = []
