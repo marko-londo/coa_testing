@@ -960,11 +960,21 @@ def jpm_ops(name, user_role):
                             weekly_ss = safe_gspread_call(gs_client.open_by_key, weekly_id, error_message="Could not open this week's sheet.")
                             tab_name = get_today_tab_name(miss_date_dt)
                             ws = safe_gspread_call(weekly_ss.worksheet, tab_name, error_message=f"Could not open weekly tab '{tab_name}'.")
+
+                            st.write("DEBUG: MissID to update in weekly:", missid)
+                            st.write("DEBUG: All MissIDs in this weekly tab:", ws.col_values(len(COLUMNS)))
+
                             row_idx_weekly = find_row_by_missid(ws, missid)
+
+                            st.write("DEBUG: row_idx_weekly returned:", row_idx_weekly)
+                            
                             current_status = row.get("Collection Status", "").strip().upper()
                             updates = {"Time Dispatched": now_time}
                             if current_status != "PREMATURE":
                                 updates["Collection Status"] = "Dispatched"
+                            
+                            
+
                             if row_idx_weekly:
                                 update_rows(ws, [row_idx_weekly], updates)
                             else:
