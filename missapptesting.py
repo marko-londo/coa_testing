@@ -1100,8 +1100,9 @@ def jpm_ops(name, user_role):
             and datetime.datetime.strptime(row.get("Date"), "%Y-%m-%d").date() < today
         ]
         if prior_uncompleted:
+            count = len(prior_uncompleted)
             st.info(
-                f"**ATTN:** There are {len(prior_uncompleted)} dispatched stops from before today that have not been completed yet."
+                f"**ATTN:** There {'is' if count == 1 else 'are'} {count} stop{'s' if count != 1 else ''} dispatched before today that {'has' if count == 1 else 'have'} not been completed yet."
             )
 
         # (2) Pending or Premature, not completed/dispatched, from prior days (for total thoroughness)
