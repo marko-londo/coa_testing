@@ -1121,7 +1121,6 @@ def jpm_ops(name, user_role):
             st.info(
                 f"**ATTN:** There are {len(pending_or_premature_prior)} stops from before today that are still pending or premature and have not been dispatched or completed."
             )
-
         to_complete = []
         for i, row in enumerate(st.session_state.to_complete_data):
             status = row.get("Collection Status", "").strip().upper()
