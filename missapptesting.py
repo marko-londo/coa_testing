@@ -906,8 +906,7 @@ def jpm_ops(name, user_role):
                 df_undispatched['Time Sent to JPM'] = pd.to_datetime(df_undispatched['Time Sent to JPM'], errors='coerce')
                 df_undispatched = df_undispatched.sort_values(by='Time Sent to JPM', ascending=True)
             columns_to_show = [
-                "Date", "Time Sent to JPM", "Address", "Zone", "Service Type",
-                "Submitted By", "Time Called In", "Collection Status"
+                "Time Sent to JPM", "Address", "Zone", "Service Type", "Collection Status"
             ]
             show_cols = [col for col in columns_to_show if col in df_undispatched.columns]
             st.subheader("Stops Awaiting Dispatch")
