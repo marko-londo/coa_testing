@@ -905,54 +905,53 @@ def jpm_ops(name, user_role):
             if 'Time Sent to JPM' in df_undispatched.columns:
                 df_undispatched['Time Sent to JPM'] = pd.to_datetime(df_undispatched['Time Sent to JPM'], errors='coerce')
                 df_undispatched = df_undispatched.sort_values(by='Time Sent to JPM', ascending=True)
+            if "MissID" not in df_undispatched.columns:
+                df_undispatched["MissID"] = ""
             columns_to_show = [
                 "Time Sent to JPM", "Address", "Zone", "Service Type", "Collection Status"
             ]
             show_cols = [col for col in columns_to_show if col in df_undispatched.columns]
-            st.subheader("Stops Awaiting Dispatch")
-            st.dataframe(df_undispatched[show_cols], use_container_width=True)        
-    
-        open_misses = []
-        for i, row in enumerate(master_records):
-            if (
-                str(row.get("Collection Status", "")).strip().upper() in ("", "PREMATURE", "PENDING")
-                and not row.get("Time Dispatched")
-            ):
-                label = (
-                    f"{row.get('Address','')} | {row.get('Zone','')} | Date: {row.get('Date','')} | Called: {row.get('Time Called In','')}"
-                )
-                open_misses.append({"row_idx": i+2, "row": row, "label": label})
-    
-        if not open_misses:
-            st.info("🎉 No pending missed stops to dispatch!")
 
-        else:
-            chosen = st.multiselect(
-                "Select missed stops to dispatch:", open_misses, format_func=lambda x: x["label"]
+            st.subheader("Stops Awaiting Dispatch")
+            event = st.dataframe(
+                df_undispatched[show_cols],
+                key="undispatched_data",
+                on_select="rerun",
+                selection_mode="multi-row",
+                use_container_width=True,
+                hide_index=True,
             )
-            if chosen and st.button("Dispatch Selected Misses"):
+
+            selected_rows = event.selection.rows if hasattr(event, "selection") else []
+
+            if selected_rows:
+                st.info(f"Selected {len(selected_rows)} stop(s) to dispatch.")
+
+            if st.button("Dispatch Selected Stops", disabled=not selected_rows):
                 now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
-                
+                selected_df = df_undispatched.iloc[selected_rows]
+                selected_missids = selected_df["MissID"].tolist()
+
                 # --- Master Log: update by MissID ---
-                for c in chosen:
-                    missid = c["row"].get("MissID")
+                for missid in selected_missids:
                     row_idx_master = find_row_by_missid(master_ws, missid)
-                    current_status = c["row"].get("Collection Status", "").strip().upper()
+                    current_status = None
+                    for row in master_records:
+                        if row.get("MissID") == missid:
+                            current_status = row.get("Collection Status", "").strip().upper()
+                            break
                     updates = {"Time Dispatched": now_time}
                     if current_status != "PREMATURE":
                         updates["Collection Status"] = "Dispatched"
-                    # Else, leave status as "Premature"
                     if row_idx_master:
                         update_rows(master_ws, [row_idx_master], updates)
                     else:
                         st.error(f"Could not find MissID {missid} in Master Misses Log. It may have been deleted.")
 
-                
                 # --- Weekly log: update by MissID ---
-                for c in chosen:
-                    r = c["row"]
-                    missid = r.get("MissID")
-                    miss_date = r.get("Date")
+                for row in selected_df.to_dict("records"):
+                    missid = row.get("MissID")
+                    miss_date = row.get("Date")
                     if miss_date:
                         try:
                             miss_date_dt = datetime.datetime.strptime(miss_date, "%Y-%m-%d").date()
@@ -961,13 +960,11 @@ def jpm_ops(name, user_role):
                             weekly_ss = safe_gspread_call(gs_client.open_by_key, weekly_id, error_message="Could not open this week's sheet.")
                             tab_name = get_today_tab_name(miss_date_dt)
                             ws = safe_gspread_call(weekly_ss.worksheet, tab_name, error_message=f"Could not open weekly tab '{tab_name}'.")
-
                             row_idx_weekly = find_row_by_missid(ws, missid)
-                            current_status = r.get("Collection Status", "").strip().upper()
+                            current_status = row.get("Collection Status", "").strip().upper()
                             updates = {"Time Dispatched": now_time}
                             if current_status != "PREMATURE":
                                 updates["Collection Status"] = "Dispatched"
-                            # Else, leave status as "Premature"
                             if row_idx_weekly:
                                 update_rows(ws, [row_idx_weekly], updates)
                             else:
@@ -975,17 +972,10 @@ def jpm_ops(name, user_role):
                         except Exception as e:
                             pass  # If the weekly sheet/tab doesn't exist, just skip
 
-            
-                st.info(f"Dispatched {len(chosen)} missed stop(s)!")
-                if chosen:
-                    last_dispatched = chosen[-1]
-                    miss_date = last_dispatched["row"].get("Date")
-                    if miss_date:
-                        miss_date_dt = datetime.datetime.strptime(miss_date, "%Y-%m-%d").date()
-                        dispatched_weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, get_sheet_title(miss_date_dt))
-                    else:
-                        st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
-
+                st.info(f"Dispatched {len(selected_rows)} missed stop(s)!")
+                st.rerun()
+        else:
+            st.info("🎉 No pending missed stops to dispatch!")
 
     elif jpm_mode == "Complete a Missed Stop":
         fields_to_reset = ["driver_checkin", "collection_status", "jpm_notes", "uploaded_image"]
