@@ -930,10 +930,10 @@ def jpm_ops(name, user_role):
                 if "Time Sent to JPM" in row and
                 pd.to_datetime(row["Time Sent to JPM"], errors="coerce").date() < today
             ]
-
             if old_stops:
+                count = len(old_stops)
                 st.info(
-                    f"**ATTN:** There are {len(old_stops)} stop(s) that need to be closed out from previous days."
+                    f"**ATTN:** There {'is' if count == 1 else 'are'} {count} stop{'s' if count != 1 else ''} that need{'s' if count == 1 else ''} to be closed out from previous day{'s' if count != 1 else ''}."
                 )
             st.subheader("Stops Awaiting Dispatch")
             event = st.dataframe(
