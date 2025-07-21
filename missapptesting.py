@@ -1088,10 +1088,10 @@ def jpm_ops(name, user_role):
             st.session_state.to_complete_data = master_records
             st.session_state.reload_to_complete = False
 
-        # --- PRIOR UNCOMPLETED WARNING BLOCK ---
+        # --- PRIOR UNCOMPLETED WARNING BLOCK (Unified) ---
         completed_statuses = ("PICKED UP", "REJECTED", "CONFIRMED PREMATURE", "ONE TIME EXCEPTION", "NOT OUT")
 
-        # (1) Dispatched, not completed, from prior days
+        # (1) Dispatched but not completed, from prior days
         prior_uncompleted = [
             row for row in master_records
             if row.get("Time Dispatched")
@@ -1099,17 +1099,8 @@ def jpm_ops(name, user_role):
             and row.get("Date")
             and datetime.datetime.strptime(row.get("Date"), "%Y-%m-%d").date() < today
         ]
-        if prior_uncompleted:
-            count = len(prior_uncompleted)
-            st.info(
-                f"**ATTN:** There {'is' if count == 1 else 'are'} {count} stop{'s' if count != 1 else ''} dispatched before today that {'has' if count == 1 else 'have'} not been completed yet."
-            )
-            df_prior = pd.DataFrame(prior_uncompleted)
-            show_cols = ["Address", "Zone", "Service Type", "Collection Status", "Date", "Time Dispatched"]
-            show_cols = [col for col in show_cols if col in df_prior.columns]
-            st.dataframe(df_prior[show_cols], use_container_width=True, hide_index=True)
 
-        # (2) Pending or Premature, not completed/dispatched, from prior days (for total thoroughness)
+        # (2) Pending or Premature, not completed/dispatched, from prior days
         pending_or_premature_prior = [
             row for row in master_records
             if str(row.get("Collection Status", "")).strip().upper() in ("PENDING", "PREMATURE")
@@ -1117,10 +1108,25 @@ def jpm_ops(name, user_role):
             and row.get("Date")
             and datetime.datetime.strptime(row.get("Date"), "%Y-%m-%d").date() < today
         ]
-        if pending_or_premature_prior:
+
+        # --- Combine, deduplicate, display ---
+        all_prior_open = prior_uncompleted + pending_or_premature_prior
+        if all_prior_open:
+            df_all_prior = pd.DataFrame(all_prior_open)
+            if "MissID" in df_all_prior.columns:
+                df_all_prior = df_all_prior.drop_duplicates(subset="MissID")
+            count = len(df_all_prior)
             st.info(
-                f"**ATTN:** There are {len(pending_or_premature_prior)} stops from before today that are still pending or premature and have not been dispatched or completed."
+                f"**ATTN:** There {'is' if count == 1 else 'are'} {count} stop{'s' if count != 1 else ''} from before today that {'needs' if count == 1 else 'need'} to be closed out (dispatched or completed)."
             )
+            show_cols = ["Address", "Zone", "Service Type", "Collection Status", "Date", "Time Dispatched"]
+            show_cols = [col for col in show_cols if col in df_all_prior.columns]
+            # Optional: sort by Date then Time Dispatched (if desired)
+            if "Date" in df_all_prior.columns:
+                df_all_prior = df_all_prior.sort_values(by=["Date", "Time Dispatched"], ascending=True)
+            st.dataframe(df_all_prior[show_cols], use_container_width=True, hide_index=True)
+
+
         to_complete = []
         for i, row in enumerate(st.session_state.to_complete_data):
             status = row.get("Collection Status", "").strip().upper()
