@@ -265,7 +265,7 @@ def upload_image_to_drive(file, folder_id, credentials):
 
 def get_completion_times_sheet_title(today):
     next_saturday = get_next_saturday(today)
-    return f"completion Times Week Ending {next_saturday.strftime('%Y-%m-%d')}"
+    return f"Completion Times Week Ending {next_saturday.strftime('%Y-%m-%d')}"
 
 def ensure_completion_times_gsheet_exists(drive, folder_id, title):
     results = drive.files().list(
@@ -709,7 +709,6 @@ def city_ops(name, user_role):
         called_in_time = st.selectbox(
             "Time Called In",
             time_options,
-            index=time_options.index(st.session_state.called_in_time),
             key="called_in_time"
         )
         
