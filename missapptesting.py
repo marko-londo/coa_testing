@@ -925,7 +925,16 @@ def jpm_ops(name, user_role):
                 "Time Sent to JPM", "Address", "Zone", "Service Type", "Collection Status"
             ]
             show_cols = [col for col in columns_to_show if col in df_undispatched.columns]
+            old_stops = [
+                row for row in undispatched_records
+                if "Time Sent to JPM" in row and
+                pd.to_datetime(row["Time Sent to JPM"], errors="coerce").date() < today
+            ]
 
+            if old_stops:
+                st.info(
+                    f"**ATTN:** There are {len(old_stops)} stop(s) that need to be closed out from previous days."
+                )
             st.subheader("Stops Awaiting Dispatch")
             event = st.dataframe(
                 df_undispatched[show_cols],
