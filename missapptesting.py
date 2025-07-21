@@ -1117,7 +1117,7 @@ def jpm_ops(name, user_role):
                 df_all_prior = df_all_prior.drop_duplicates(subset="MissID")
             count = len(df_all_prior)
             st.info(
-                f"**ATTN:** There {'is' if count == 1 else 'are'} {count} stop{'s' if count != 1 else ''} from before today that {'needs' if count == 1 else 'need'} to be closed out (dispatched or completed)."
+                f"**ATTN:** There {'is' if count == 1 else 'are'} {count} stop{'s' if count != 1 else ''} from before today that {'needs' if count == 1 else 'need'} to be closed out. See table below:"
             )
             show_cols = ["Address", "Zone", "Service Type", "Collection Status", "Date", "Time Dispatched"]
             show_cols = [col for col in show_cols if col in df_all_prior.columns]
