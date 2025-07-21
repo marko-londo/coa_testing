@@ -56,6 +56,14 @@ st.set_page_config(
 
 st.logo(image=coa_logo)
 
+def safe_gspread_call(callable_fn, *args, error_message="A Google Sheets error occurred. Please try again.", **kwargs):
+    import gspread
+    try:
+        return callable_fn(*args, **kwargs)
+    except gspread.exceptions.APIError:
+        st.error(f"⚠️ {error_message}")
+        st.stop()
+
 def get_weekday_index(day_name):
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     return days.index(day_name)
@@ -290,7 +298,8 @@ def submit_completion_time_section():
 
 
     # Fetch all rows; assume 1 header + 3 rows (MSW, SS, YW)
-    sheet_data = completion_times_ws.get_all_records()
+    sheet_data = safe_gspread_call(completion_times_ws.get_all_records, error_message="Could not fetch completion times from Google Sheets.")
+
     user = name  # from user_login()
 
     # Find incomplete services
@@ -432,7 +441,7 @@ def ensure_gsheet_exists(drive, folder_id, title):
 
 def find_row_by_missid(ws, missid):
     col_idx = len(COLUMNS)  # last column
-    missids = ws.col_values(col_idx)
+    missids = safe_gspread_call(ws.col_values, col_idx, error_message="Could not fetch MissIDs from Google Sheets.")
     for i, v in enumerate(missids):
         if v == missid:
             return i + 1  # Google Sheets rows are 1-based
@@ -463,7 +472,8 @@ def colnum_string(n):
 def update_rows(ws, indices, updates, columns=COLUMNS):
     last_col = colnum_string(len(columns))
     for idx in indices:
-        row_values = ws.row_values(idx)
+        row_values = safe_gspread_call(ws.row_values, idx, error_message="Could not fetch row values from Google Sheets.")
+
         row_dict = dict(zip(columns, row_values + [""]*(len(columns)-len(row_values))))
         row_dict.update(updates)
         ws.update(
@@ -564,7 +574,7 @@ def city_ops(name, user_role):
         drive = build('drive', 'v3', credentials=credentials_gs)
         sheet_title = get_sheet_title(today)
         weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
-        weekly_ss = gs_client.open_by_key(weekly_id)
+        weekly_ss = safe_gspread_call(gs_client.open_by_key, weekly_id, error_message="Could not open this week's sheet.")
         today_tab = get_today_tab_name(today)
         
         service_type = st.selectbox("Service Type", ["MSW", "SS", "YW"])
@@ -761,8 +771,8 @@ def city_ops(name, user_role):
         if st.button("Submit Missed Stop"):
     
             master_id = get_master_log_id(drive, FOLDER_ID)
-            master_ws = gs_client.open_by_key(master_id).sheet1
-            master_records = master_ws.get_all_records()
+            master_ws = safe_gspread_call(gs_client.open_by_key, master_id, error_message="Could not open the Master Misses Log sheet. Please try again.").sheet1
+            master_records = safe_gspread_call(master_ws.get_all_records, error_message="Could not fetch missed stops from Google Sheets. Please try again.")
     
             duplicate_pending_or_premature = any(
                 row.get("Address") == address and
@@ -786,9 +796,9 @@ def city_ops(name, user_role):
             form_data["Last Missed"] = matching_entries[-1]["Date"] if matching_entries else "First Time"
 
     
-            ws = weekly_ss.worksheet(today_tab)
-            ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
-            master_ws.append_row([form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED")
+            ws = safe_gspread_call(weekly_ss.worksheet, today_tab, error_message="Could not open today's tab in the weekly sheet.")
+            safe_gspread_call(ws.append_row, [form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED", error_message="Could not submit missed stop to Google Sheets. Please try again.")
+            safe_gspread_call(master_ws.append_row, [form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED", error_message="Could not update master log. Please try again.")
         
             st.info("Miss submitted successfully!")         
             for k in fields_to_reset:
@@ -814,14 +824,18 @@ def jpm_ops(name, user_role):
         last_col = colnum_string(len(columns))
         for idx in indices:
             try:
-                row_values = ws.row_values(idx)
+                row_values = safe_gspread_call(ws.row_values, idx, error_message="Could not fetch row values from Google Sheets.")
+
                 row_dict = dict(zip(columns, row_values + [""]*(len(columns)-len(row_values))))
                 row_dict.update(updates)
-                ws.update(
+                safe_gspread_call(
+                    ws.update,
                     f"A{idx}:{last_col}{idx}",
                     [[row_dict.get(col, "") for col in columns]],
-                    value_input_option="USER_ENTERED"
+                    value_input_option="USER_ENTERED",
+                    error_message=f"Could not update row {idx} in Google Sheets."
                 )
+
             except HttpError as e:
                 if e.resp.status == 429 or "Rate Limit" in str(e):
                     st.error(
@@ -836,8 +850,8 @@ def jpm_ops(name, user_role):
     if jpm_mode == "Dispatch Misses":
         # Always work from Master Misses Log
         master_id = get_master_log_id(drive, FOLDER_ID)
-        master_ws = gs_client.open_by_key(master_id).sheet1
-        master_records = master_ws.get_all_records()
+        master_ws = safe_gspread_call(gs_client.open_by_key, master_id, error_message="Could not open the Master Misses Log sheet. Please try again.").sheet1
+        master_records = safe_gspread_call(master_ws.get_all_records, error_message="Could not fetch missed stops from Google Sheets. Please try again.")
     
         open_misses = []
         for i, row in enumerate(master_records):
@@ -885,9 +899,10 @@ def jpm_ops(name, user_role):
                             miss_date_dt = datetime.datetime.strptime(miss_date, "%Y-%m-%d").date()
                             sheet_title = get_sheet_title(miss_date_dt)
                             weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
-                            weekly_ss = gs_client.open_by_key(weekly_id)
+                            weekly_ss = safe_gspread_call(gs_client.open_by_key, weekly_id, error_message="Could not open this week's sheet.")
                             tab_name = get_today_tab_name(miss_date_dt)
-                            ws = weekly_ss.worksheet(tab_name)
+                            ws = safe_gspread_call(weekly_ss.worksheet, tab_name, error_message=f"Could not open weekly tab '{tab_name}'.")
+
                             row_idx_weekly = find_row_by_missid(ws, missid)
                             current_status = r.get("Collection Status", "").strip().upper()
                             updates = {"Time Dispatched": now_time}
@@ -916,8 +931,8 @@ def jpm_ops(name, user_role):
     elif jpm_mode == "Complete a Missed Stop":
         fields_to_reset = ["driver_checkin", "collection_status", "jpm_notes", "uploaded_image"]
         master_id = get_master_log_id(drive, FOLDER_ID)
-        master_ws = gs_client.open_by_key(master_id).sheet1
-        master_records = master_ws.get_all_records()
+        master_ws = safe_gspread_call(gs_client.open_by_key, master_id, error_message="Could not open the Master Misses Log sheet. Please try again.").sheet1
+        master_records = safe_gspread_call(master_ws.get_all_records, error_message="Could not fetch missed stops from Google Sheets. Please try again.")
     
         # Use session state for caching/filtering if desired (optional)
         if "to_complete_data" not in st.session_state or st.session_state.get("reload_to_complete", False):
@@ -988,9 +1003,10 @@ def jpm_ops(name, user_role):
                                 miss_date_dt = datetime.datetime.strptime(miss_date, "%Y-%m-%d").date()
                                 sheet_title = get_sheet_title(miss_date_dt)
                                 weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
-                                weekly_ss = gs_client.open_by_key(weekly_id)
+                                weekly_ss = safe_gspread_call(gs_client.open_by_key, weekly_id, error_message="Could not open this week's sheet.")
                                 tab_name = get_today_tab_name(miss_date_dt)
-                                ws = weekly_ss.worksheet(tab_name)
+                                ws = safe_gspread_call(weekly_ss.worksheet, tab_name, error_message=f"Could not open weekly tab '{tab_name}'.")
+
                                 tab_records = ws.get_all_records()
                                 for j, tr in enumerate(tab_records):
                                     if (tr.get("Address") == r.get("Address")
@@ -1064,9 +1080,10 @@ def jpm_ops(name, user_role):
                         miss_date_dt = datetime.datetime.strptime(miss_date, "%Y-%m-%d").date()
                         sheet_title = get_sheet_title(miss_date_dt)
                         weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
-                        weekly_ss = gs_client.open_by_key(weekly_id)
+                        weekly_ss = safe_gspread_call(gs_client.open_by_key, weekly_id, error_message="Could not open this week's sheet.")
                         tab_name = get_today_tab_name(miss_date_dt)
-                        ws = weekly_ss.worksheet(tab_name)
+                        ws = safe_gspread_call(weekly_ss.worksheet, tab_name, error_message=f"Could not open weekly tab '{tab_name}'.")
+
                         # NEW: find row by MissID in this worksheet!
                         row_idx_weekly = find_row_by_missid(ws, missid)
                         if row_idx_weekly:
@@ -1109,7 +1126,7 @@ today_str = today.strftime("%-m.%-d.%Y")
 drive = build('drive', 'v3', credentials=credentials_gs)
 sheet_title = get_sheet_title(today)
 weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, sheet_title)
-weekly_ss = gs_client.open_by_key(weekly_id)
+weekly_ss = safe_gspread_call(gs_client.open_by_key, weekly_id, error_message="Could not open this week's sheet.")
 today_tab = get_today_tab_name(today)
 name, username, user_role = user_login(authenticator, credentials)
 
