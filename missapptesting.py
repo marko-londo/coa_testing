@@ -968,7 +968,21 @@ def jpm_ops(name, user_role):
                             if row_idx_weekly:
                                 update_rows(ws, [row_idx_weekly], updates)
                             else:
-                                st.error(f"Could not find MissID {missid} in weekly sheet '{tab_name}'.")
+                                # Append the missing row, using all columns from Master row!
+                                st.warning(f"MissID {missid} not found in weekly sheet '{tab_name}'. Appending from master...")
+                                try:
+                                    safe_gspread_call(
+                                        ws.append_row,
+                                        [row.get(col, "") for col in COLUMNS],
+                                        value_input_option="USER_ENTERED",
+                                        error_message=f"Could not append missing MissID {missid} to weekly tab."
+                                    )
+                                    # After appending, try updating again (now it will exist)
+                                    new_row_idx = len(ws.get_all_values())  # 1-based
+                                    update_rows(ws, [new_row_idx], updates)
+                                except Exception as e:
+                                    st.error(f"Failed to append missing row to weekly sheet: {e}")
+
                         except Exception as e:
                             st.error(f"Error updating weekly sheet for MissID {missid} in tab '{tab_name}': {e}")
 
@@ -1137,8 +1151,21 @@ def jpm_ops(name, user_role):
                         if row_idx_weekly:
                             update_rows(ws, [row_idx_weekly], updates)
                         else:
-                            # Optional: log/warn
-                            st.error("Could not find this record in the weekly sheet. It may have been deleted or is missing a MissID.")
+                            # Append the missing row, using all columns from Master row!
+                            st.warning(f"MissID {missid} not found in weekly sheet '{tab_name}'. Appending from master...")
+                            try:
+                                safe_gspread_call(
+                                    ws.append_row,
+                                    [row.get(col, "") for col in COLUMNS],
+                                    value_input_option="USER_ENTERED",
+                                    error_message=f"Could not append missing MissID {missid} to weekly tab."
+                                )
+                                # After appending, try updating again (now it will exist)
+                                new_row_idx = len(ws.get_all_values())  # 1-based
+                                update_rows(ws, [new_row_idx], updates)
+                            except Exception as e:
+                                st.error(f"Failed to append missing row to weekly sheet: {e}")
+
                     except Exception as e:
                         pass  # skip if the weekly sheet/tab doesn't exist
 
