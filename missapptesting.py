@@ -80,6 +80,16 @@ def get_prior_legit_miss_count(master_records, address, this_row_date, this_row_
                 prior_rows.append(row)
     return len(prior_rows)
 
+def is_service_type_scheduled_today(service_type, today, address_df):
+    """
+    Returns True if the given service_type (e.g., 'MSW', 'SS', 'YW')
+    is actually scheduled for today anywhere in the address list.
+    Example: No YW on Monday, No SS on Thursday.
+    """
+    day_name = today.strftime("%A")  # "Monday", etc.
+    zone_field = f"{service_type} Zone"
+    return any(str(row[zone_field]).strip().lower() == day_name.lower() for row in address_df)
+
 
 def user_login(authenticator, credentials):
     name, authentication_status, username = authenticator.login('main')
@@ -705,12 +715,36 @@ def city_ops(name, user_role):
             # Find the correct row for this service type ("MSW", "SS", or "YW")
             ct_records = completion_times_ws.get_all_records()
             completion_row = next((row for row in ct_records if row.get("Service Type", "").strip().upper() == service_type), None)
-            if completion_row and completion_row.get("Completion Status", "").strip().upper() == "NOT COMPLETE":
+
+            # --- NEW LOGIC FOR PREMATURE ---
+            # Only mark Premature if:
+            # (A) Today's zone matches the selected zone
+            # (B) This service is scheduled anywhere today
+            # (C) Completion not yet marked
+
+            day_name = today.strftime("%A")
+            today_zones = sorted({row.get(f"{service_type} Zone") for row in address_df if row.get(f"{service_type} Zone")})
+            today_service_zone = None
+            for z in today_zones:
+                if z and day_name.lower() in str(z).lower():
+                    today_service_zone = z
+                    break
+
+            # Make sure everything matches and service is scheduled today
+            if (
+                completion_row and
+                completion_row.get("Completion Status", "").strip().upper() == "NOT COMPLETE" and
+                zone == today_service_zone and
+                is_service_type_scheduled_today(service_type, today, address_df)
+            ):
                 form_data["Collection Status"] = "Premature"
                 st.info(f"FYI: The {service_type} service has not been marked completed yet for today. "
                         f"This stop will be flagged as **Premature**. ")
+            else:
+                form_data["Collection Status"] = "Pending"
         except Exception as e:
-            st.error(f"Could not check completion status for today: {e}")        
+            st.error(f"Could not check completion status for today: {e}")
+
         
         missing_fields = []
         
