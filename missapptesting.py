@@ -946,7 +946,10 @@ def jpm_ops(name, user_role):
                 selected_df = df_undispatched.iloc[selected_rows]
                 selected_missids = selected_df["MissID"].tolist()
 
-                # --- Master Log: update by MissID ---
+                # --- Master Log: batch update by MissID ---
+                indices_to_update = []
+                row_updates = []  # Parallel list: updates for each row
+
                 for missid in selected_missids:
                     row_idx_master = find_row_by_missid(master_ws, missid)
                     current_status = None
@@ -958,11 +961,35 @@ def jpm_ops(name, user_role):
                     if current_status != "PREMATURE":
                         updates["Collection Status"] = "Dispatched"
                     if row_idx_master:
-                        update_rows(master_ws, [row_idx_master], updates)
+                        indices_to_update.append(row_idx_master)
+                        row_updates.append(updates)
                     else:
                         st.error(f"Could not find MissID {missid} in Master Misses Log. It may have been deleted.")
 
-                # --- Weekly log: update by MissID ---
+                if indices_to_update:
+                    # Use batch_update for all at once
+                    last_col = colnum_string(len(COLUMNS))
+                    data = master_ws.get_all_values()
+                    requests = []
+                    for idx, updates in zip(indices_to_update, row_updates):
+                        row_values = data[idx-1] if idx-1 < len(data) else []
+                        row_dict = dict(zip(COLUMNS, row_values + [""]*(len(COLUMNS)-len(row_values))))
+                        row_dict.update(updates)
+                        range_str = f"A{idx}:{last_col}{idx}"
+                        requests.append({
+                            "range": range_str,
+                            "values": [[row_dict.get(col, "") for col in COLUMNS]],
+                        })
+                    if requests:
+                        master_ws.batch_update(requests, value_input_option="USER_ENTERED")
+
+                # --- Weekly log: batch update by MissID ---
+                from collections import defaultdict
+
+                # 1. Collect updates for each sheet/tab as: {(sheet_id, tab_name): list of (row_idx, updates, full_row_dict)}
+                batch_update_map = defaultdict(list)
+                append_map = defaultdict(list)  # For missing rows
+
                 for row in selected_df.to_dict("records"):
                     missid = row.get("MissID")
                     miss_date = row.get("Date")
@@ -976,34 +1003,65 @@ def jpm_ops(name, user_role):
                             ws = safe_gspread_call(weekly_ss.worksheet, tab_name, error_message=f"Could not open weekly tab '{tab_name}'.")
 
                             row_idx_weekly = find_row_by_missid(ws, missid)
-
                             current_status = row.get("Collection Status", "").strip().upper()
                             updates = {"Time Dispatched": now_time}
                             if current_status != "PREMATURE":
                                 updates["Collection Status"] = "Dispatched"
-                            
-                            
 
                             if row_idx_weekly:
-                                update_rows(ws, [row_idx_weekly], updates)
+                                batch_update_map[(weekly_id, tab_name)].append((row_idx_weekly, updates, row))
                             else:
-                                # Append the missing row, using all columns from Master row!
-                                st.warning(f"MissID {missid} not found in weekly sheet '{tab_name}'. Appending from master...")
-                                try:
-                                    safe_gspread_call(
-                                        ws.append_row,
-                                        [row.get(col, "") for col in COLUMNS],
-                                        value_input_option="USER_ENTERED",
-                                        error_message=f"Could not append missing MissID {missid} to weekly tab."
-                                    )
-                                    # After appending, try updating again (now it will exist)
-                                    new_row_idx = len(ws.get_all_values())  # 1-based
-                                    update_rows(ws, [new_row_idx], updates)
-                                except Exception as e:
-                                    st.error(f"Failed to append missing row to weekly sheet: {e}")
-
+                                # Schedule for append, then update after appending
+                                append_map[(weekly_id, tab_name)].append((ws, row, updates, missid))
                         except Exception as e:
                             st.error(f"Error updating weekly sheet for MissID {missid} in tab '{tab_name}': {e}")
+
+                # 2. Perform batch updates for existing rows
+                for (weekly_id, tab_name), row_tuples in batch_update_map.items():
+                    weekly_ss = gs_client.open_by_key(weekly_id)
+                    ws = weekly_ss.worksheet(tab_name)
+                    data = ws.get_all_values()
+                    last_col = colnum_string(len(COLUMNS))
+                    requests = []
+                    for row_idx_weekly, updates, row in row_tuples:
+                        row_values = data[row_idx_weekly - 1] if row_idx_weekly - 1 < len(data) else []
+                        row_dict = dict(zip(COLUMNS, row_values + [""]*(len(COLUMNS)-len(row_values))))
+                        row_dict.update(updates)
+                        range_str = f"A{row_idx_weekly}:{last_col}{row_idx_weekly}"
+                        requests.append({
+                            "range": range_str,
+                            "values": [[row_dict.get(col, "") for col in COLUMNS]],
+                        })
+                    if requests:
+                        ws.batch_update(requests, value_input_option="USER_ENTERED")
+
+                # 3. Handle appends and then update those rows as well
+                for (weekly_id, tab_name), append_tuples in append_map.items():
+                    weekly_ss = gs_client.open_by_key(weekly_id)
+                    ws = weekly_ss.worksheet(tab_name)
+                    for ws_obj, row, updates, missid in append_tuples:
+                        st.warning(f"MissID {missid} not found in weekly sheet '{tab_name}'. Appending from master...")
+                        try:
+                            # Append the missing row
+                            safe_gspread_call(
+                                ws_obj.append_row,
+                                [row.get(col, "") for col in COLUMNS],
+                                value_input_option="USER_ENTERED",
+                                error_message=f"Could not append missing MissID {missid} to weekly tab."
+                            )
+                            # After appending, get new row index (should be at the end)
+                            new_row_idx = len(ws_obj.get_all_values())
+                            row_values = ws_obj.row_values(new_row_idx)
+                            row_dict = dict(zip(COLUMNS, row_values + [""]*(len(COLUMNS)-len(row_values))))
+                            row_dict.update(updates)
+                            last_col = colnum_string(len(COLUMNS))
+                            ws_obj.update(
+                                f"A{new_row_idx}:{last_col}{new_row_idx}",
+                                [[row_dict.get(col, "") for col in COLUMNS]],
+                                value_input_option="USER_ENTERED"
+                            )
+                        except Exception as e:
+                            st.error(f"Failed to append/update missing row to weekly sheet: {e}")
 
                 st.info(f"Dispatched {len(selected_rows)} missed stop(s)!")
                 st.rerun()
