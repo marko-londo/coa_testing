@@ -1087,7 +1087,18 @@ def jpm_ops(name, user_role):
         if "to_complete_data" not in st.session_state or st.session_state.get("reload_to_complete", False):
             st.session_state.to_complete_data = master_records
             st.session_state.reload_to_complete = False
-    
+        # --- PRIOR UNCOMPLETED WARNING ---
+        completed_statuses = ("PICKED UP", "REJECTED", "CONFIRMED PREMATURE", "ONE TIME EXCEPTION", "NOT OUT")
+        prior_uncompleted = [
+            row for row in master_records
+            if row.get("Time Dispatched")
+            and str(row.get("Collection Status", "").strip().upper()) not in completed_statuses
+            and row.get("Date")
+            and datetime.datetime.strptime(row.get("Date"), "%Y-%m-%d").date() < today
+        ]
+        if prior_uncompleted:
+            st.info(f"**ATTN:** There are {len(prior_uncompleted)} stops dispatched before today that have not been completed yet.")
+
         to_complete = []
         for i, row in enumerate(st.session_state.to_complete_data):
             status = row.get("Collection Status", "").strip().upper()
