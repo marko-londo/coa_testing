@@ -512,6 +512,7 @@ def colnum_string(n):
         string = chr(65 + remainder) + string
     return string
 
+
 def update_rows(ws, indices, updates, columns=COLUMNS):
     """
     Batch update multiple rows in Google Sheets.
