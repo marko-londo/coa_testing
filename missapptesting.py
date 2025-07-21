@@ -513,18 +513,29 @@ def colnum_string(n):
     return string
 
 def update_rows(ws, indices, updates, columns=COLUMNS):
+    """
+    Batch update multiple rows in Google Sheets.
+    """
     last_col = colnum_string(len(columns))
-    for idx in indices:
-        row_values = safe_gspread_call(ws.row_values, idx, error_message="Could not fetch row values from Google Sheets.")
+    data = ws.get_all_values()
+    requests = []
 
+    for idx in indices:
+        # Google Sheets is 1-based, so idx-1 for list
+        try:
+            row_values = data[idx-1] if idx-1 < len(data) else []
+        except Exception:
+            row_values = []
         row_dict = dict(zip(columns, row_values + [""]*(len(columns)-len(row_values))))
         row_dict.update(updates)
-        ws.update(
-            f"A{idx}:{last_col}{idx}",
-            [[row_dict.get(col, "") for col in columns]],
-            value_input_option="USER_ENTERED"
-        )
-        time.sleep(0.5)
+        range_str = f"A{idx}:{last_col}{idx}"
+        requests.append({
+            "range": range_str,
+            "values": [[row_dict.get(col, "") for col in columns]],
+        })
+
+    if requests:
+        ws.batch_update(requests, value_input_option="USER_ENTERED")
 
 @st.cache_data(ttl=3600)
 def load_address_df(_service_account_info, address_sheet_url):
