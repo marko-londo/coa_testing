@@ -130,7 +130,7 @@ def user_login(authenticator, credentials):
 
     user_obj = credentials["usernames"].get(username, {})
     user_role = user_obj.get("role", "city")
-    st.info(f"Welcome, {name}!")
+    st.info(f"Welcome, {name}!", icon=":material/account_circle:")
     authenticator.logout("Logout", "sidebar")
     return name, username, user_role
 
