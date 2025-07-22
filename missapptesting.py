@@ -1089,7 +1089,7 @@ def jpm_ops(name, user_role):
             st.session_state.reload_to_complete = False
 
         # --- PRIOR UNCOMPLETED WARNING BLOCK (Unified) ---
-        completed_statuses = ("PICKED UP", "REJECTED", "CONFIRMED PREMATURE", "ONE TIME EXCEPTION", "NOT OUT")
+        completed_statuses = ("PICKED UP", "REJECTED", "CONFIRMED PREMATURE", "ONE TIME EXCEPTION", "NOT OUT", "CREATED IN ERROR")
 
         # (1) Dispatched but not completed, from prior days
         prior_uncompleted = [
