@@ -125,7 +125,7 @@ def user_login(authenticator, credentials):
         st.error("Incorrect username or password. Please try again.")
         st.stop()
     elif authentication_status is None:
-        st.info("Please enter your username and password.")
+        st.info("Please enter your username and password.", icon=":material/passkey:")
         st.stop()
 
     user_obj = credentials["usernames"].get(username, {})
