@@ -63,7 +63,7 @@ def safe_gspread_call(callable_fn, *args, error_message="A Google Sheets error o
     try:
         return callable_fn(*args, **kwargs)
     except gspread.exceptions.APIError:
-        st.error(f"⚠️ {error_message}")
+        st.error(f"{error_message}", icon=":material/error:")
         st.stop()
 
 def get_weekday_index(day_name):
@@ -122,7 +122,7 @@ def user_login(authenticator, credentials):
     name, authentication_status, username = authenticator.login('main')
 
     if authentication_status is False:
-        st.error("Incorrect username or password. Please try again.")
+        st.error("Incorrect username or password. Please try again.", icon=":material/error:")
         st.stop()
     elif authentication_status is None:
         st.info("Please enter your username and password.", icon=":material/passkey:")
@@ -294,7 +294,7 @@ def ensure_completion_times_gsheet_exists(drive, folder_id, title):
         # If you want to create it automatically, implement creation logic here.
         st.error(
             f"Completion Times sheet '{title}' does not exist in the specified folder.\n"
-            "Please contact your admin to create this week's completion log sheet."
+            "Please contact your admin to create this week's completion log sheet.", icon=":material/error:"
         )
         st.stop()
 
@@ -303,7 +303,7 @@ def submit_completion_time_section():
 
     today = datetime.datetime.now(pytz.timezone("America/New_York")).date()
     if today.weekday() == 6:
-        st.info("Completion times cannot be submitted on Sundays. Please return on a service day (Monday–Saturday).")
+        st.info("Completion times cannot be submitted on Sundays. Please return on a service day (Monday–Saturday).", icon=":material/calendar_clock:")
         return
 
     completion_sheet_title = get_completion_times_sheet_title(today)
@@ -334,7 +334,7 @@ def submit_completion_time_section():
         return filled
     auto_filled = auto_fill_skipped_services(completion_times_ws, today)
     if auto_filled:
-        st.info(f"Auto-filled completion for: {', '.join(auto_filled)} (no service on previous day).")
+        st.info(f"Auto-filled completion for: {', '.join(auto_filled)} (no service on previous day).", icon=":material/calendar_apps_script:")
 
     # Fetch all rows; assume 1 header + 3 rows (MSW, SS, YW)
     sheet_data = safe_gspread_call(completion_times_ws.get_all_records, error_message="Could not fetch completion times from Google Sheets.")
@@ -352,7 +352,7 @@ def submit_completion_time_section():
 
 
     if not incomplete_services:
-        st.info("All services completed for today.")
+        st.info("All services completed for today.", icon=":material/assignment_turned_in:")
     else:
         for row_idx, row in incomplete_services:
             service_type = row.get("Service Type")
@@ -372,7 +372,7 @@ def submit_completion_time_section():
                     f"B{row_idx}:E{row_idx}",
                     [["COMPLETE", st.session_state[time_key], now_time, name]]
                 )
-                st.info(f"Completion time for {service_type} recorded at {st.session_state[time_key]} by {name}.")
+                st.info(f"Completion time for {service_type} recorded at {st.session_state[time_key]} by {name}.", icon=":material/task:")
                 del st.session_state[time_key]  # Clear it after submission
                 st.rerun()
 
@@ -383,7 +383,7 @@ def submit_completion_time_section():
         if st.button("Yes, Clear All"):
             for i in range(2, 5):  # Rows 2,3,4 (Google Sheets 1-indexed)
                 completion_times_ws.update(f"B{i}:E{i}", [["NOT COMPLETE", "", "", ""]])
-            st.info("All submissions cleared.")
+            st.info("All submissions cleared.", icon=":material/delete_sweep:")
             st.rerun()
         if st.button("Cancel"):
             st.rerun()
@@ -478,7 +478,7 @@ def ensure_gsheet_exists(drive, folder_id, title):
     else:
         st.error(
             f"Sheet '{title}' does not exist in the specified folder.\n"
-            "Please contact your admin to create this week's log sheet."
+            "Please contact your admin to create this week's log sheet.", icon=":material/error:"
         )
         st.stop()
 
@@ -501,7 +501,7 @@ def get_master_log_id(drive, folder_id):
     else:
         st.error(
             "The 'Master Misses Log' sheet does not exist in the specified folder.\n"
-            "Please contact your admin to create the log sheet."
+            "Please contact your admin to create the log sheet.", icon=":material/error:"
         )
         st.stop()
 
@@ -582,11 +582,11 @@ def help_page(name, user_role):
             feedback_ws = gs_client.open_by_key(FEEDBACK_SHEET_ID).worksheet(FEEDBACK_SHEET_NAME)
             feedback_ws.append_row(row)
             if feedback == 1:
-                st.info("Thanks for the thumbs up!")
+                st.info("Thanks for the thumbs up!", icon=":material/cheer:")
             else:
-                st.info("Sorry to hear that. For more detailed feedback or to report an issue, please use the button below.")
+                st.info("Sorry to hear that. For more detailed feedback or to report an issue, please use the button below.", icon=":material/sentiment_dissatisfied:")
         except Exception as e:
-            st.error(f"Failed to write to feedback sheet: {e}")
+            st.error(f"Failed to write to feedback sheet: {e}", icon=":material/error:")
 
     st.markdown("---")
 
@@ -606,9 +606,9 @@ def help_page(name, user_role):
             try:
                 feedback_ws = gs_client.open_by_key(FEEDBACK_SHEET_ID).worksheet(FEEDBACK_SHEET_NAME)
                 feedback_ws.append_row(row)
-                st.info("Thank you for your feedback! It has been recorded.")
+                st.info("Thank you for your feedback! It has been recorded.", icon=":material/feedback:")
             except Exception as e:
-                st.error(f"Failed to write to feedback sheet: {e}")
+                st.error(f"Failed to write to feedback sheet: {e}", icon=":material/error:")
             st.rerun()
 
     if st.button("Submit Feedback / Report Bug / Request Feature"):
@@ -805,12 +805,12 @@ def city_ops(name, user_role):
                 form_data["Collection Status"] = "Premature"
                 st.info(
                     f"FYI: The {service_type} service has not been marked completed yet for today. "
-                    f"This stop will be flagged as **Premature**."
+                    f"This stop will be flagged as **Premature**.", icon=":material/data_info_alert:"
                 )
             else:
                 form_data["Collection Status"] = "Pending"
         except Exception as e:
-            st.error(f"Could not check completion status for today: {e}")
+            st.error(f"Could not check completion status for today: {e}", icon=":material/error:")
 
 
         
@@ -820,7 +820,7 @@ def city_ops(name, user_role):
             missing_fields.append("PE Address")
         
         if missing_fields:
-            st.error(f"🚫 Please complete the following required fields: {', '.join(missing_fields)}")
+            st.error(f"Please complete the following required fields: {', '.join(missing_fields)}", icon=":material/block:")
             st.stop()
         
         if st.button("Submit Missed Stop"):
@@ -836,7 +836,7 @@ def city_ops(name, user_role):
                 for row in master_records
             )
             if duplicate_pending_or_premature:
-                st.error("🚫 This address already has a pending or premature missed stop not yet dispatched. Please close or dispatch it before submitting a new one.")
+                st.error("This address already has a pending or premature missed stop not yet dispatched. Please close or dispatch it before submitting a new one.", icon=":material/block:")
                 st.stop()
 
             # Only count legitimate missed stops (exclude Premature/Rejected/other non-miss statuses)
@@ -855,7 +855,7 @@ def city_ops(name, user_role):
             safe_gspread_call(ws.append_row, [form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED", error_message="Could not submit missed stop to Google Sheets. Please try again.")
             safe_gspread_call(master_ws.append_row, [form_data.get(col, "") for col in COLUMNS], value_input_option="USER_ENTERED", error_message="Could not update master log. Please try again.")
         
-            st.info("Miss submitted successfully!")         
+            st.info("Miss submitted successfully!", icon=":material/list_alt_check:")         
             for k in fields_to_reset:
                 if k in st.session_state:
                     del st.session_state[k]
@@ -894,13 +894,13 @@ def jpm_ops(name, user_role):
             except HttpError as e:
                 if e.resp.status == 429 or "Rate Limit" in str(e):
                     st.error(
-                        "⚠️ Too many updates at once! Google Sheets is rate-limiting you. "
-                        "Please wait a minute and try again, or select fewer items at a time."
+                        "Too many updates at once! Google Sheets is rate-limiting you. "
+                        "Please wait a minute and try again, or select fewer items at a time.", icon=":material/warning:"
                     )
                     # Optionally: break or return to prevent further updates
                     break
                 else:
-                    st.error(f"Error updating row {idx}: {e}")
+                    st.error(f"Error updating row {idx}: {e}", icon=":material/error:")
 
     if jpm_mode == "Dispatch Misses":
         # Always work from Master Misses Log
@@ -933,7 +933,7 @@ def jpm_ops(name, user_role):
             if old_stops:
                 count = len(old_stops)
                 st.info(
-                    f"**ATTN:** There {'is' if count == 1 else 'are'} {count} stop{'s' if count != 1 else ''} that need{'s' if count == 1 else ''} to be closed out from a previous day{'s' if count != 1 else ''}."
+                    f"**ATTN:** There {'is' if count == 1 else 'are'} {count} stop{'s' if count != 1 else ''} that need{'s' if count == 1 else ''} to be closed out from a previous day{'s' if count != 1 else ''}.", icon=":material/data_alert:"
                 )
             st.subheader("Stops Awaiting Dispatch")
             event = st.dataframe(
@@ -948,7 +948,7 @@ def jpm_ops(name, user_role):
             selected_rows = event.selection.rows if hasattr(event, "selection") else []
 
             if selected_rows:
-                st.info(f"Selected {len(selected_rows)} stop(s) to dispatch.")
+                st.info(f"Selected {len(selected_rows)} stop(s) to dispatch.", icon=":material/select_check_box:")
 
             if st.button("Dispatch Selected Stops", disabled=not selected_rows):
                 now_time = datetime.datetime.now(pytz.timezone("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
@@ -973,7 +973,7 @@ def jpm_ops(name, user_role):
                         indices_to_update.append(row_idx_master)
                         row_updates.append(updates)
                     else:
-                        st.error(f"Could not find MissID {missid} in Master Misses Log. It may have been deleted.")
+                        st.error(f"Could not find MissID {missid} in Master Misses Log. It may have been deleted.", icon=":material/error:")
 
                 if indices_to_update:
                     # Use batch_update for all at once
@@ -1023,7 +1023,7 @@ def jpm_ops(name, user_role):
                                 # Schedule for append, then update after appending
                                 append_map[(weekly_id, tab_name)].append((ws, row, updates, missid))
                         except Exception as e:
-                            st.error(f"Error updating weekly sheet for MissID {missid} in tab '{tab_name}': {e}")
+                            st.error(f"Error updating weekly sheet for MissID {missid} in tab '{tab_name}': {e}", icon=":material/error:")
 
                 # 2. Perform batch updates for existing rows
                 for (weekly_id, tab_name), row_tuples in batch_update_map.items():
@@ -1070,12 +1070,12 @@ def jpm_ops(name, user_role):
                                 value_input_option="USER_ENTERED"
                             )
                         except Exception as e:
-                            st.error(f"Failed to append/update missing row to weekly sheet: {e}")
+                            st.error(f"Failed to append/update missing row to weekly sheet: {e}", icon=":material/error:")
 
-                st.info(f"Dispatched {len(selected_rows)} missed stop(s)!")
+                st.info(f"Dispatched {len(selected_rows)} missed stop(s)!", icon=":material/list_alt_check:")
                 st.rerun()
         else:
-            st.info("🎉 No pending missed stops to dispatch!")
+            st.info("No pending missed stops to dispatch!", icon=":material/done_all:")
 
     elif jpm_mode == "Complete a Missed Stop":
         fields_to_reset = ["driver_checkin", "collection_status", "jpm_notes", "uploaded_image"]
@@ -1117,7 +1117,7 @@ def jpm_ops(name, user_role):
                 df_all_prior = df_all_prior.drop_duplicates(subset="MissID")
             count = len(df_all_prior)
             st.info(
-                f"**ATTN:** There {'is' if count == 1 else 'are'} {count} stop{'s' if count != 1 else ''} from before today that {'needs' if count == 1 else 'need'} to be closed out. Check the table below."
+                f"**ATTN:** There {'is' if count == 1 else 'are'} {count} stop{'s' if count != 1 else ''} from before today that {'needs' if count == 1 else 'need'} to be closed out. Check the table below:", icon=":material/data_alert:"
             )
             show_cols = ["Address", "Zone", "Service Type", "Collection Status", "Date", "Time Dispatched"]
             show_cols = [col for col in show_cols if col in df_all_prior.columns]
@@ -1140,7 +1140,7 @@ def jpm_ops(name, user_role):
 
     
         if not to_complete:
-            st.info("✅ No dispatched, incomplete misses for today!")
+            st.info("No dispatched, incomplete misses for today!", icon=":material/:celebration:")
         else:
             st.caption(
                 "Only 'Premature' stops that have been dispatched will be listed here for completion."
@@ -1211,7 +1211,7 @@ def jpm_ops(name, user_role):
                         dropbox_url = upload_to_dropbox(uploaded_image, row_index_weekly, service_type)
                         image_link = f'=HYPERLINK("{dropbox_url}", "Image Link")'
                     except Exception as e:
-                        st.error(f"Dropbox upload failed: {e}")
+                        st.error(f"Dropbox upload failed: {e}", icon=":material/error:")
                         image_link = "UPLOAD FAILED"
                 else:
                     image_link = "N/A"
@@ -1257,7 +1257,7 @@ def jpm_ops(name, user_role):
                 if row_idx_master:
                     update_rows(master_ws, [row_idx_master], updates)
                 else:
-                    st.error("Could not find this record in the Master Misses Log. It may have been deleted.")
+                    st.error("Could not find this record in the Master Misses Log. It may have been deleted.", icon=":material/error:")
                 
                 # --- Also update in the correct weekly sheet/tab for recordkeeping ---
                 r = sel
@@ -1289,14 +1289,14 @@ def jpm_ops(name, user_role):
                                 new_row_idx = len(ws.get_all_values())  # 1-based
                                 update_rows(ws, [new_row_idx], updates)
                             except Exception as e:
-                                st.error(f"Failed to append missing row to weekly sheet: {e}")
+                                st.error(f"Failed to append missing row to weekly sheet: {e}", icon=":material/error:")
 
                     except Exception as e:
                         pass  # skip if the weekly sheet/tab doesn't exist
 
     
                 st.session_state.reload_to_complete = True
-                st.info("Miss completed and logged!")
+                st.info("Miss completed and logged!", icon=":material/list_alt_check:")
                 if 'miss_date_dt' in locals():
                     completed_weekly_id = ensure_gsheet_exists(drive, FOLDER_ID, get_sheet_title(miss_date_dt))
                 for k in fields_to_reset:
@@ -1336,5 +1336,5 @@ if user_role == "city":
 elif user_role == "jpm":
     jpm_ops(name, user_role)
 else:
-    st.error("Role not recognized. Please contact your admin.")
+    st.error("Role not recognized. Please contact your admin.", icon=":material/error:")
 
