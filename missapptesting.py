@@ -1140,7 +1140,7 @@ def jpm_ops(name, user_role):
 
     
         if not to_complete:
-            st.info("No dispatched, incomplete misses for today!", icon=":material/:celebration:")
+            st.info("No dispatched, incomplete misses for today!", icon=":material/celebration:")
         else:
             st.caption(
                 "Only 'Premature' stops that have been dispatched will be listed here for completion."
