@@ -49,6 +49,7 @@ credentials_gs = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, sco
 
 gs_client = gspread.authorize(credentials_gs)
 
+
 st.set_page_config(
     page_title="MPU Portal | JP Mascaro & Sons",
     page_icon="https://raw.githubusercontent.com/marko-londo/coa_testing/refs/heads/main/favicon.ico",
@@ -829,14 +830,23 @@ def city_ops(name, user_role):
             master_ws = safe_gspread_call(gs_client.open_by_key, master_id, error_message="Could not open the Master Misses Log sheet. Please try again.").sheet1
             master_records = safe_gspread_call(master_ws.get_all_records, error_message="Could not fetch missed stops from Google Sheets. Please try again.")
     
+            completed_statuses = (
+                "PICKED UP",
+                "REJECTED",
+                "CONFIRMED PREMATURE",
+                "ONE TIME EXCEPTION",
+                "NOT OUT",
+                "CREATED IN ERROR"
+            )
+
             duplicate_pending_or_premature = any(
-                row.get("Address") == address and
-                str(row.get("Collection Status", "")).strip().upper() in ("PENDING", "PREMATURE")
-                and not row.get("Time Dispatched")
+                row.get("Address", "").strip().upper() == address.strip().upper() and
+                str(row.get("Collection Status", "")).strip().upper() not in completed_statuses
                 for row in master_records
             )
+
             if duplicate_pending_or_premature:
-                st.error("This address already has a pending or premature missed stop not yet dispatched. Please close or dispatch it before submitting a new one.", icon=":material/block:")
+                st.error("This address already has a missed stop that is not yet resolved.", icon=":material/block:")
                 st.stop()
 
             # Only count legitimate missed stops (exclude Premature/Rejected/other non-miss statuses)
