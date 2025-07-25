@@ -836,7 +836,8 @@ def city_ops(name, user_role):
                 "CONFIRMED PREMATURE",
                 "ONE TIME EXCEPTION",
                 "NOT OUT",
-                "CREATED IN ERROR"
+                "CREATED IN ERROR",
+                "LATE PUT OUT"
             )
 
             duplicate_pending_or_premature = any(
@@ -1099,7 +1100,7 @@ def jpm_ops(name, user_role):
             st.session_state.reload_to_complete = False
 
         # --- PRIOR UNCOMPLETED WARNING BLOCK (Unified) ---
-        completed_statuses = ("PICKED UP", "REJECTED", "CONFIRMED PREMATURE", "ONE TIME EXCEPTION", "NOT OUT", "CREATED IN ERROR")
+        completed_statuses = ("PICKED UP", "REJECTED", "CONFIRMED PREMATURE", "ONE TIME EXCEPTION", "NOT OUT", "CREATED IN ERROR", "LATE PUT OUT")
 
         # (1) Dispatched but not completed, from prior days
         prior_uncompleted = [
@@ -1172,7 +1173,7 @@ def jpm_ops(name, user_role):
             )
             
             # --- The rest, using session state for sticky fields if you want ---
-            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out", "Rejected", "Delayed", "Confirmed Premature", "One Time Exception", "Created in Error"], key="collection_status")
+            collection_status = st.selectbox("Collection Status", ["Picked Up", "Not Out", "Rejected", "Delayed", "Confirmed Premature", "One Time Exception", "Created in Error", "Late Put Out"], key="collection_status")
             jpm_notes = st.text_area("JPM Notes", key="jpm_notes")
             uploaded_image = st.file_uploader("Upload Image (optional)", type=["jpg","jpeg","png","heic","webp"])
             
@@ -1238,7 +1239,7 @@ def jpm_ops(name, user_role):
                 called_in_time = sel.get("Time Called In")
                 prior_legit_misses = get_prior_legit_miss_count(master_records, address, row_date, called_in_time)
                 
-                if collection_status.upper() in ("PREMATURE", "CONFIRMED PREMATURE", "REJECTED", "ONE TIME EXCEPTION", "NOT OUT", "CREATED IN ERROR"):
+                if collection_status.upper() in ("PREMATURE", "CONFIRMED PREMATURE", "REJECTED", "ONE TIME EXCEPTION", "NOT OUT", "CREATED IN ERROR", "LATE PUT OUT"):
                     updates["Times Missed"] = str(prior_legit_misses)
                     # Find last legit prior miss date, else "Never"
                     prior_misses = [
